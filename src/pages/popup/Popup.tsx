@@ -1,10 +1,9 @@
-import React from 'react';
 import logo from '@assets/img/logo.svg';
 import '@pages/popup/Popup.css';
+import withErrorBoundary from '@src/shared/hoc/withErrorBoundary';
+import withSuspense from '@src/shared/hoc/withSuspense';
 import useStorage from '@src/shared/hooks/useStorage';
 import exampleThemeStorage from '@src/shared/storages/exampleThemeStorage';
-import withSuspense from '@src/shared/hoc/withSuspense';
-import withErrorBoundary from '@src/shared/hoc/withErrorBoundary';
 
 const Popup = () => {
   const theme = useStorage(exampleThemeStorage);
@@ -17,9 +16,7 @@ const Popup = () => {
       }}>
       <header className="App-header" style={{ color: theme === 'light' ? '#000' : '#fff' }}>
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/pages/popup/Popup.tsx</code> and save to reload.
-        </p>
+        <p>Hello World</p>
         <a
           className="App-link"
           href="https://reactjs.org"
