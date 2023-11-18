@@ -36,7 +36,15 @@ const manifest = {
   devtools_page: 'src/pages/devtools/index.html',
   web_accessible_resources: [
     {
-      resources: ['assets/js/*.js', 'assets/css/*.css', 'icon-128.png', 'icon-32.png'],
+      resources: [
+        'assets/js/*.js',
+        'assets/css/*.css',
+        'worker.**.js',
+        'wasm/**.wasm',
+        'svg/**.svg',
+        'icon-128.png',
+        'icon-32.png',
+      ],
       matches: ['*://*/*'],
     },
   ],

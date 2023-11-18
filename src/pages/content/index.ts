@@ -32,31 +32,122 @@ function downloadVideo(data) {
   a.remove();
 }
 
-function readFileAsArrayBuffer(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsArrayBuffer(file);
-  });
-}
+// function readFileAsArrayBuffer(file) {
+//   return new Promise((resolve, reject) => {
+//     const reader = new FileReader();
+//     reader.onload = () => resolve(reader.result);
+//     reader.onerror = () => reject(reader.error);
+//     reader.readAsArrayBuffer(file);
+//   });
+// }
 
-function arrayBufferToBlob(arrayBuffer, mimeType) {
-  return new Blob([arrayBuffer], { type: mimeType });
-}
+// function arrayBufferToBlob(arrayBuffer, mimeType) {
+//   return new Blob([arrayBuffer], { type: mimeType });
+// }
 
-function blobToFile(blob, fileName) {
-  return new File([blob], fileName, { type: blob.type });
-}
+// function blobToFile(blob, fileName) {
+//   return new File([blob], fileName, { type: blob.type });
+// }
 
-function arrayBufferToFile(arrayBuffer, fileName, mimeType) {
-  const blob = arrayBufferToBlob(arrayBuffer, mimeType);
-  return blobToFile(blob, fileName);
-}
+// function arrayBufferToFile(arrayBuffer, fileName, mimeType) {
+//   const blob = arrayBufferToBlob(arrayBuffer, mimeType);
+//   return blobToFile(blob, fileName);
+// }
 
-const init = async () => {
+const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/esm';
+
+(async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
+  const FakeWorker = (await import('@pages/content/FakeWorker')).default;
+  window.Worker = FakeWorker;
+  globalThis.Worker = FakeWorker;
+
+  const { FFmpeg } = await import('@ffmpeg/ffmpeg');
+  const { fetchFile, toBlobURL } = await import('@ffmpeg/util');
+
+  console.log('fetchFile', fetchFile);
+  const ffmpeg = new FFmpeg();
+  ffmpeg.on('log', ({ type, message }) => {
+    console.log('type', type);
+    console.log('message', message);
+  });
+  console.log('ffmpeg', ffmpeg);
+  console.log('FFmpeg', FFmpeg);
+
+  console.log('init');
+
+  console.log('content loading...');
+
+  // debugger;
+  await ffmpeg.load({
+    // coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+    // wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    // log: true,
+    workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
+  });
+
+  console.log('content loaded');
+
+  const processVideo = async (file: File) => {
+    // Initialize FFmpeg
+    console.log('initializing', file);
+    if (!ffmpeg.loaded) {
+      throw new Error('ffmpeg not loaded');
+      //await ffmpeg.load();
+    }
+    console.log('done loading');
+
+    // Write the file to FFmpeg's virtual file system
+    const tempFile = await fetchFile(file);
+    console.log('tempFile', tempFile);
+    await ffmpeg.writeFile('temp.mov', tempFile).catch(err => {
+      console.log('err writing file', err);
+    });
+
+    // const didItWork = await ffmpeg.console.log('happen', happen);
+
+    // const textTxt = await ffmpeg.readFile('temp.mov').catch(err => {
+    //   console.log('err reading file', err);
+    // });
+
+    // console.log('textTxt', textTxt);
+
+    // ffmpeg.writeFile('test.txt', 'Hello world123').catch(err => {
+    //   console.log('err writing file', err);
+    // });
+
+    // const textTxt = await ffmpeg.readFile('text.txt').catch(err => {
+    //   console.log('err reading file', err);
+    // });
+
+    // console.log('textTxt', textTxt);
+
+    // const readTempFile = await ffmpeg.readFile('temp.file');
+    // console.log('readTempFile', readTempFile);
+
+    // console.log('before run file', file);
+    // // Run FFmpeg command to compress the video
+    // await ffmpeg.exec(['-i', 'temp.mov', 'output.mp4']);
+
+    const output = await ffmpeg.readFile('temp.mov').catch(err => console.error(err));
+    const data = new Uint8Array(output as ArrayBuffer);
+    console.log('output', output);
+    console.log('data buffer', data.buffer);
+
+    // console.log('after run');
+
+    // Read the result
+    // const data = await ffmpeg.readFile('output.mp4');
+    // console.log('data after read', data);
+    // console.log('data.buffer', data.buffer);
+
+    // // Convert the data to a Blob
+    // // const compressedFile = new Blob([data.buffer], { type: 'video/mp4' });
+    // const compressedFile = new Blob([data?.buffer], { type: 'video/mp4' });
+
+    return data.buffer;
+  };
 
   if (!(chrome && chrome.runtime && chrome.runtime.sendMessage)) {
     throw new Error('chrome.runtime.sendMessage is not available.');
@@ -70,42 +161,19 @@ const init = async () => {
   const sendFileToBeCompressed = (file: File) => {
     console.log('chrome', chrome.runtime.sendMessage);
     // Make into promise
-    return new Promise((resolve, reject) => {
-      // Send message to background script
-      console.log('before sending file');
-      console.log('chrome', chrome);
-      console.log('file', file);
-
-      // console.log('arrayBuffer', arrayBuffer);
-      // const blob = arrayBufferToBlob(arrayBuffer, 'video/mp4');
-      // const reader = new FileReader(file, 'utf8');
-
-      const port = chrome.runtime.connect({ name: 'file-connection' });
-
-      port.postMessage({ fileName: file.name, file });
-
-      port.onMessage.addListener(response => {
-        console.log('response', response);
-        resolve(response);
-      });
-
-      //   chrome?.runtime?.sendMessage?.({ action: 'processVideo', fileName: file.name }, response => {
-      //     const arrayBuffer = response;
-      //     const mimeType = 'video/mp4'; // Replace with the actual MIME type
-      //     const fileName = 'output.mp4'; // Replace with the desired file name
-
-      //     console.log('response', response);
-
-      //     const file = arrayBufferToFile(arrayBuffer, fileName, mimeType);
-      //     if (response) {
-      //       resolve(file);
-      //     } else {
-      //       reject(response);
-      //     }
-      //   });
-      // });
-      return true;
-    });
+    console.log('before sending file');
+    console.log('chrome', chrome);
+    console.log('file', file);
+    try {
+      return processVideo(file)
+        .then(response => {
+          console.log('response', response);
+          return response;
+        })
+        .catch(err => console.error(err));
+    } catch (error) {
+      console.log('error', error);
+    }
   };
 
   // Function to add drag-and-drop event listeners to a textarea
@@ -192,6 +260,4 @@ const init = async () => {
       }
     });
   });
-};
-
-init();
+})();
