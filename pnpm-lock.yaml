@@ -5,6 +5,15 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@ffmpeg/core':
+    specifier: ^0.12.4
+    version: 0.12.4
+  '@ffmpeg/ffmpeg':
+    specifier: ^0.12.7
+    version: 0.12.7
+  '@ffmpeg/util':
+    specifier: ^0.12.1
+    version: 0.12.1
   construct-style-sheets-polyfill:
     specifier: 3.1.0
     version: 3.1.0
@@ -754,6 +763,28 @@ packages:
     resolution: {integrity: sha512-Kn7K8dx/5U6+cT1yEhpX1w4PCSg0M+XyRILPgvwcEBjerFWCwQj5sbr3/VmxqV0JGHCBCzyd6LxypEuehypY1w==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dev: true
+
+  /@ffmpeg/core@0.12.4:
+    resolution: {integrity: sha512-m+H+P66TSEPlf1vK5WwVDr+Uksd1GULi7jk4o/447X5HQouTLaZjicAXC00C/IrrmyqJ8YX/8cfhqMryvNZGSg==}
+    engines: {node: '>=16.x'}
+    dev: false
+
+  /@ffmpeg/ffmpeg@0.12.7:
+    resolution: {integrity: sha512-Uw9h1tNU4/Q4YRrgBKvnKiH5gpL+nl8h4HRfvSK0K93MqVOan6Qs3Lj82l9i1qj6xQLPramXw0Wl6g65W4pfnA==}
+    engines: {node: '>=18.x'}
+    dependencies:
+      '@ffmpeg/types': 0.12.2
+    dev: false
+
+  /@ffmpeg/types@0.12.2:
+    resolution: {integrity: sha512-NJtxwPoLb60/z1Klv0ueshguWQ/7mNm106qdHkB4HL49LXszjhjCCiL+ldHJGQ9ai2Igx0s4F24ghigy//ERdA==}
+    engines: {node: '>=16.x'}
+    dev: false
+
+  /@ffmpeg/util@0.12.1:
+    resolution: {integrity: sha512-10jjfAKWaDyb8+nAkijcsi9wgz/y26LOc1NKJradNMyCIl6usQcBbhkjX5qhALrSBcOy6TOeksunTYa+a03qNQ==}
+    engines: {node: '>=18.x'}
+    dev: false
 
   /@humanwhocodes/config-array@0.11.13:
     resolution: {integrity: sha512-JSBDMiDKSzQVngfRjOdFXgFfklaXI4K9nLF49Auh21lmBWRLIK3+xTErTWD4KU54pb6coM6ESE7Awz/FNU3zgQ==}
