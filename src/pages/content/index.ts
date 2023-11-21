@@ -77,12 +77,7 @@ const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm';
   // console.log('content loading...');
 
   debugger;
-  const loaded = await ffmpeg.load({
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    // log: true,
-    //workerURL: await toBlobURL(`${baseURL_UMD}/ffmpeg-core.worker.js`, 'text/javascript'),
-  });
+  const loaded = await ffmpeg.load();
 
   console.log('loaded?', loaded);
 
@@ -102,17 +97,19 @@ const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm';
     console.log('tempFile', tempFile);
     await ffmpeg.writeFile({ path: 'temp.mov', data: tempFile });
 
+    await ffmpeg.exec({ args: ['-i', 'temp.mov', 'output.mp4'] });
+
     // .catch(err => {
     //   console.log('err writing file', err);
     // });
 
     // const didItWork = await ffmpeg.console.log('happen', happen);
 
-    const textTxt = await ffmpeg.readFile({ path: 'temp.mov' }).catch(err => {
-      console.log('err reading file', err);
-    });
+    const original = await ffmpeg.readFile({ path: 'temp.mov' });
+    const compressed = await ffmpeg.readFile({ path: 'output.mp4' });
 
-    console.log('textTxt', textTxt);
+    console.log('original', original);
+    console.log('compressed', compressed);
 
     // ffmpeg.writeFile('test.txt', 'Hello world123').catch(err => {
     //   console.log('err writing file', err);
@@ -129,7 +126,6 @@ const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm';
 
     // console.log('before run file', file);
     // // Run FFmpeg command to compress the video
-    // await ffmpeg.exec(['-i', 'temp.mov', 'output.mp4']);
 
     // const output = await ffmpeg.readFile('temp.mov').catch(err => console.error(err));
     // const data = new Uint8Array(output as ArrayBuffer);

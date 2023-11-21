@@ -38,7 +38,9 @@ const manifest = {
     {
       resources: [
         'assets/js/*.js',
+        'assets/js/*.wasm',
         'assets/css/*.css',
+        'assets/wasm/*.wasm',
         'worker.**.js',
         'ffmpegScripts/**.js',
         'ffmpegScripts/**.wasm',

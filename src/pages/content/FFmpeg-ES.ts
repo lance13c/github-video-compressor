@@ -1,3 +1,4 @@
+import wasmUrl from '@assets/ffmpegScripts/ffmpeg-core.wasm?url';
 import createFFmpegCore from '@ffmpeg/core';
 
 type LoadOptions = {
@@ -111,7 +112,27 @@ export class FFmpegWorker {
     const firstLoad = !this.ffmpeg;
 
     self.createFFmpegCore = createFFmpegCore;
-    console.log('core', createFFmpegCore);
+    const url = new URL(wasmUrl, import.meta.url);
+    const responsePromise = await fetch(url);
+    const test = await responsePromise;
+    console.log('test', test);
+    const body = await responsePromise.body;
+    console.log('body', body);
+    const result = await WebAssembly.compileStreaming(test);
+    // const { module, instance } = await WebAssembly.instantiateStreaming(responsePromise);
+
+    // console.log('module', module);
+    // console.log('instance', instance);
+    // const wasmModule = await wasmInit({});
+    // const result = await initWasm();
+    console.log('result', result);
+    //
+    // const wasmModule = await createFFmpegCore({
+    //   wasmUrl: url,
+    // });
+    // console.log('self.createFFmpegCore()', wasmModule);
+    // this.ffmpeg = await self.createFFmpegCore();
+    // console.log('this.ffmpeg', this.ffmpeg);
 
     // this.ffmpeg.setLogger((data: any) => self.postMessage({ type: this.FFMessageType.LOG, data }));
 
@@ -240,6 +261,4 @@ export class FFmpegWorker {
   };
 }
 
-// Usage:
-const ffmpegWorker = new FFmpegWorker();
-self.onmessage = ffmpegWorker.onMessage;
+export default FFmpegWorker;
