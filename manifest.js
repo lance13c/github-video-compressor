@@ -40,6 +40,8 @@ const manifest = {
         'assets/js/*.js',
         'assets/css/*.css',
         'worker.**.js',
+        'ffmpegScripts/**.js',
+        'ffmpegScripts/**.wasm',
         'wasm/**.wasm',
         'svg/**.svg',
         'icon-128.png',

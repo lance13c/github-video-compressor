@@ -38,15 +38,17 @@ export default defineConfig({
     isDev && watchRebuild(),
   ],
   publicDir,
+  optimizeDeps: {
+    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'],
+  },
   build: {
     outDir,
     /** Can slowDown build speed. */
-    // sourcemap: isDev,
+    sourcemap: isDev,
     minify: isProduction,
     modulePreload: false,
     reportCompressedSize: isProduction,
     emptyOutDir: !isDev,
-    sourcemap: 'inline',
     rollupOptions: {
       input: {
         devtools: resolve(pagesDir, 'devtools', 'index.html'),

@@ -8,29 +8,29 @@
  *
  */
 
-function createBlob(data) {
-  return new Blob([data], { type: 'video/mp4' }); // Adjust the MIME type if necessary
-}
+// function createBlob(data) {
+//   return new Blob([data], { type: 'video/mp4' }); // Adjust the MIME type if necessary
+// }
 
-function createBlobUrl(blob) {
-  return URL.createObjectURL(blob);
-}
+// function createBlobUrl(blob) {
+//   return URL.createObjectURL(blob);
+// }
 
-function downloadVideo(data) {
-  console.log('data', data);
-  const blob = createBlob(data);
-  const url = createBlobUrl(blob);
-  const a = document.createElement('a');
+// function downloadVideo(data) {
+//   console.log('data', data);
+//   const blob = createBlob(data);
+//   const url = createBlobUrl(blob);
+//   const a = document.createElement('a');
 
-  a.href = url;
-  a.download = 'compressed_video.mp4'; // Name of the downloaded file
-  document.body.appendChild(a);
-  a.click();
+//   a.href = url;
+//   a.download = 'compressed_video.mp4'; // Name of the downloaded file
+//   document.body.appendChild(a);
+//   a.click();
 
-  // Cleanup: revoke the object URL and remove the anchor element
-  URL.revokeObjectURL(url);
-  a.remove();
-}
+//   // Cleanup: revoke the object URL and remove the anchor element
+//   URL.revokeObjectURL(url);
+//   a.remove();
+// }
 
 // function readFileAsArrayBuffer(file) {
 //   return new Promise((resolve, reject) => {
@@ -54,45 +54,44 @@ function downloadVideo(data) {
 //   return blobToFile(blob, fileName);
 // }
 
-const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/esm';
+const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm';
+// const baseURL_UMD = 'https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/umd';
 
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
-  const FakeWorker = (await import('@pages/content/FakeWorker')).default;
-  window.Worker = FakeWorker;
-  globalThis.Worker = FakeWorker;
+  const { FFmpegWorker } = await import('@root/src/pages/content/FFmpeg-ES.js');
 
-  const { FFmpeg } = await import('@ffmpeg/ffmpeg');
   const { fetchFile, toBlobURL } = await import('@ffmpeg/util');
 
   console.log('fetchFile', fetchFile);
-  const ffmpeg = new FFmpeg();
-  ffmpeg.on('log', ({ type, message }) => {
-    console.log('type', type);
-    console.log('message', message);
-  });
+  const ffmpeg = new FFmpegWorker();
+  // ffmpeg.on('log', ({ type, message }) => {
+  //   console.log('type', type);
+  //   console.log('message', message);
+  // });
   console.log('ffmpeg', ffmpeg);
-  console.log('FFmpeg', FFmpeg);
 
-  console.log('init');
+  // console.log('init');
 
-  console.log('content loading...');
+  // console.log('content loading...');
 
-  // debugger;
-  await ffmpeg.load({
-    // coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-    // wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+  debugger;
+  const loaded = await ffmpeg.load({
+    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
     // log: true,
-    workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
+    //workerURL: await toBlobURL(`${baseURL_UMD}/ffmpeg-core.worker.js`, 'text/javascript'),
   });
+
+  console.log('loaded?', loaded);
 
   console.log('content loaded');
 
   const processVideo = async (file: File) => {
     // Initialize FFmpeg
     console.log('initializing', file);
-    if (!ffmpeg.loaded) {
+    if (!ffmpeg?.loaded) {
       throw new Error('ffmpeg not loaded');
       //await ffmpeg.load();
     }
@@ -101,17 +100,19 @@ const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/esm';
     // Write the file to FFmpeg's virtual file system
     const tempFile = await fetchFile(file);
     console.log('tempFile', tempFile);
-    await ffmpeg.writeFile('temp.mov', tempFile).catch(err => {
-      console.log('err writing file', err);
-    });
+    await ffmpeg.writeFile({ path: 'temp.mov', data: tempFile });
+
+    // .catch(err => {
+    //   console.log('err writing file', err);
+    // });
 
     // const didItWork = await ffmpeg.console.log('happen', happen);
 
-    // const textTxt = await ffmpeg.readFile('temp.mov').catch(err => {
-    //   console.log('err reading file', err);
-    // });
+    const textTxt = await ffmpeg.readFile({ path: 'temp.mov' }).catch(err => {
+      console.log('err reading file', err);
+    });
 
-    // console.log('textTxt', textTxt);
+    console.log('textTxt', textTxt);
 
     // ffmpeg.writeFile('test.txt', 'Hello world123').catch(err => {
     //   console.log('err writing file', err);
@@ -130,10 +131,10 @@ const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/esm';
     // // Run FFmpeg command to compress the video
     // await ffmpeg.exec(['-i', 'temp.mov', 'output.mp4']);
 
-    const output = await ffmpeg.readFile('temp.mov').catch(err => console.error(err));
-    const data = new Uint8Array(output as ArrayBuffer);
-    console.log('output', output);
-    console.log('data buffer', data.buffer);
+    // const output = await ffmpeg.readFile('temp.mov').catch(err => console.error(err));
+    // const data = new Uint8Array(output as ArrayBuffer);
+    // console.log('output', output);
+    // console.log('data buffer', data.buffer);
 
     // console.log('after run');
 
@@ -146,7 +147,7 @@ const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/esm';
     // // const compressedFile = new Blob([data.buffer], { type: 'video/mp4' });
     // const compressedFile = new Blob([data?.buffer], { type: 'video/mp4' });
 
-    return data.buffer;
+    // return data.buffer;
   };
 
   if (!(chrome && chrome.runtime && chrome.runtime.sendMessage)) {
@@ -247,7 +248,7 @@ const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/esm';
                 .then(compressedVideo => {
                   console.log('finish compressed video');
                   console.log('compressedVideo', compressedVideo);
-                  downloadVideo(compressedVideo);
+                  // downloadVideo(compressedVideo);
                 })
                 .catch(err => {
                   console.log('err', err);
