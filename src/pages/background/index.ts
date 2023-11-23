@@ -1,8 +1,8 @@
 import reloadOnUpdate from 'virtual:reload-on-update-in-background-script';
 import 'webextension-polyfill';
 // import { storeFileEntryId, retrieveAndRestoreFileEntry } from './fileSystemStorageModule';
+import createFFmpegCore from '@ffmpeg/core';
 import { FFmpegCoreModule } from '@ffmpeg/types';
-import createFFmpegCore from './ffmpeg-core.js';
 // function readFileAsArrayBuffer(file) {
 //   return new Promise((resolve, reject) => {
 //     const reader = new FileReader();
@@ -35,15 +35,60 @@ import createFFmpegCore from './ffmpeg-core.js';
 
 const init = async () => {
   console.log('init');
-  debugger;
   const ffmpeg: FFmpegCoreModule = await createFFmpegCore();
   console.log('ffmpeg', ffmpeg);
 
-  const writeFileResponse = await ffmpeg.FS.writeFile('hello.txt', 'Hello world!');
+  ffmpeg.setLogger(log => {
+    console.info('log', log);
+  });
+
+  // const writeFileResponse = await ffmpeg.FS.writeFile('hello.txt', 'Hello world!');
+  // console.log('writeFileResponse', writeFileResponse);
+
+  // const response = await ffmpeg.FS.readFile('hello.txt', { encoding: 'utf8' });
+  // console.log('response', response);
+  const arrayBuffer = new ArrayBuffer(8000);
+  const uint8Array = new Uint8Array(arrayBuffer);
+  console.log('original uint8Array', uint8Array.length);
+
+  const writeFileResponse = await ffmpeg.FS.writeFile('hello.mp4', uint8Array);
   console.log('writeFileResponse', writeFileResponse);
 
-  const response = await ffmpeg.FS.readFile('hello.txt', { encoding: 'utf8' });
-  console.log('response', response);
+  console.log('before directory', ffmpeg.FS.readdir('/')); // List files in the root directory
+  console.log('before tmp', ffmpeg.FS.readdir('/tmp')); // List files in the root directory
+  console.log('before dev', ffmpeg.FS.readdir('/dev')); // List files in the root directory
+  console.log('before proc', ffmpeg.FS.readdir('/proc')); // List files in the root directory
+
+  // Compress the hello.mov file to a .mp4 file, then print the file size
+  const value = await ffmpeg.exec('-i', 'hello.mp4', '-vcodec', 'libx264', '-acodec', 'aac', 'output.mp4');
+  console.log('value', value);
+
+  console.log('after directory', ffmpeg.FS.readdir('/')); // List files in the root directory
+  console.log('after tmp', ffmpeg.FS.readdir('/tmp')); // List files in the root directory
+  console.log('after dev', ffmpeg.FS.readdir('/dev')); // List files in the root directory
+  console.log('after proc', ffmpeg.FS.readdir('/proc')); // List files in the root directory
+
+  try {
+    const version = await ffmpeg.exec('-version');
+    console.log('FFmpeg Version:', version);
+  } catch (error) {
+    console.error('Error executing FFmpeg:', error);
+  }
+  // try {
+  //   const codecs = await ffmpeg.exec('-codecs');
+  //   console.log('FFmpeg codecs:', codecs);
+  // } catch (error) {
+  //   console.error('Error executing FFmpeg codecs:', error);
+  // }
+
+  // await ffmpeg.exec('-i', 'hello.mov', 'output.mp4');
+  // const output = ffmpeg.FS.readFile('output.mp4', { encoding: 'binary' });
+  // console.log('output', output);
+  // console.log('output length', output.length);
+  console.log('hit after');
+
+  // const response = await ffmpeg.FS.readFile('hello.mov', { encoding: 'utf8' });
+  // console.log('response', response);
 
   //   // Message
   //   console.log('init start');

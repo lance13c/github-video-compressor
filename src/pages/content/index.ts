@@ -76,7 +76,6 @@
 
   // // console.log('content loading...');
 
-  // debugger;
   // const loaded = await ffmpeg.load();
 
   // console.log('loaded?', loaded);
@@ -213,47 +212,58 @@
 
   // // Find all file input elements on the page and add a change listener
 
-  // const fileInputs = document.querySelectorAll('input[type=file]');
+  const fileInputs = document.querySelectorAll('input[type=file]');
 
-  // fileInputs.forEach(fileInput => {
-  //   fileInput.addEventListener('change', (e: Event) => {
-  //     e.stopPropagation();
-  //     e.preventDefault();
-  //     console.log('content loaded');
-  //     console.log(e);
-  //     // Ensure the target of the event is an HTMLInputElement
-  //     const target = e.target as HTMLInputElement;
+  fileInputs.forEach(fileInput => {
+    fileInput.addEventListener('change', (e: Event) => {
+      e.stopPropagation();
+      e.preventDefault();
+      console.log('content loaded');
+      console.log(e);
+      // Ensure the target of the event is an HTMLInputElement
+      const target = e.target as HTMLInputElement;
 
-  //     console.log(target);
+      console.log(target);
 
-  //     // Check if the target is a file input
-  //     if (target && target.type === 'file') {
-  //       const files = target.files;
+      // Check if the target is a file input
+      if (target && target.type === 'file') {
+        const files = target.files;
 
-  //       if (files) {
-  //         console.log('files loaded', files);
-  //         // Iterate over the FileList
-  //         for (let i = 0; i < files.length; i++) {
-  //           const file = files[i];
+        if (files) {
+          console.log('files loaded', files);
+          // Iterate over the FileList
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
 
-  //           // Check if the file type includes 'video'
-  //           if (file.type.includes('video')) {
-  //             // console.log('Video file detected:', file.name);
-  //             // console.log('hit processVideo');
-  //             // sendFileToBeCompressed(file)
-  //             //   .then(compressedVideo => {
-  //             //     console.log('finish compressed video');
-  //             //     console.log('compressedVideo', compressedVideo);
-  //             //     // downloadVideo(compressedVideo);
-  //             //   })
-  //             //   .catch(err => {
-  //             //     console.log('err', err);
-  //             //   });
-  //             // Perform further actions here
-  //           }
-  //         }
-  //       }
-  //     }
-  //   });
-  // });
+            // Check if the file type includes 'video'
+            if (file.type.includes('video')) {
+              console.log('Video file detected:', file.name);
+              // console.log('hit processVideo');
+
+              // convert video to uint8Array and print it out
+
+              file.arrayBuffer().then(ab => {
+                const value = new Uint8Array(ab);
+                console.log('hit uint8Array');
+                console.log(value);
+              });
+
+              // console.log(Uint8Array())
+
+              // sendFileToBeCompressed(file)
+              //   .then(compressedVideo => {
+              //     console.log('finish compressed video');
+              //     console.log('compressedVideo', compressedVideo);
+              //     // downloadVideo(compressedVideo);
+              //   })
+              //   .catch(err => {
+              //     console.log('err', err);
+              //   });
+              // Perform further actions here
+            }
+          }
+        }
+      }
+    });
+  });
 })();
