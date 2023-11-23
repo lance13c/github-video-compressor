@@ -1,9 +1,8 @@
 import reloadOnUpdate from 'virtual:reload-on-update-in-background-script';
 import 'webextension-polyfill';
 // import { storeFileEntryId, retrieveAndRestoreFileEntry } from './fileSystemStorageModule';
-
-reloadOnUpdate('pages/background');
-
+import { FFmpegCoreModule } from '@ffmpeg/types';
+import createFFmpegCore from './ffmpeg-core.js';
 // function readFileAsArrayBuffer(file) {
 //   return new Promise((resolve, reject) => {
 //     const reader = new FileReader();
@@ -35,6 +34,17 @@ reloadOnUpdate('pages/background');
 // const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm';
 
 const init = async () => {
+  console.log('init');
+  debugger;
+  const ffmpeg: FFmpegCoreModule = await createFFmpegCore();
+  console.log('ffmpeg', ffmpeg);
+
+  const writeFileResponse = await ffmpeg.FS.writeFile('hello.txt', 'Hello world!');
+  console.log('writeFileResponse', writeFileResponse);
+
+  const response = await ffmpeg.FS.readFile('hello.txt', { encoding: 'utf8' });
+  console.log('response', response);
+
   //   // Message
   //   console.log('init start');
   //   const ffmpeg = new FFmpeg();
@@ -106,3 +116,4 @@ const init = async () => {
 };
 
 init();
+reloadOnUpdate('pages/background');

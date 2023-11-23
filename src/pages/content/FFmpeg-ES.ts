@@ -1,4 +1,3 @@
-import wasmUrl from '@assets/ffmpegScripts/ffmpeg-core.wasm?url';
 import createFFmpegCore from '@ffmpeg/core';
 
 type LoadOptions = {
@@ -48,6 +47,8 @@ interface CreateFFmpegCoreOptions {
 interface CreateFFmpegCore {
   (options: CreateFFmpegCoreOptions): Promise<FFmpeg>;
 }
+
+const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm';
 
 interface FFmpeg {
   setLogger: (callback: (data: any) => void) => void;
@@ -112,27 +113,37 @@ export class FFmpegWorker {
     const firstLoad = !this.ffmpeg;
 
     self.createFFmpegCore = createFFmpegCore;
-    const url = new URL(wasmUrl, import.meta.url);
-    const responsePromise = await fetch(url);
-    const test = await responsePromise;
-    console.log('test', test);
-    const body = await responsePromise.body;
-    console.log('body', body);
-    const result = await WebAssembly.compileStreaming(test);
+    // const url = new URL(wasmUrl, import.meta.url);
+    // const responsePromise = await fetch(url);
+    // const test = await responsePromise;
+    // console.log('test', test);
+    // const body = await responsePromise.body;
+    // console.log('body', body);
+    // const result = await WebAssembly.compileStreaming(test);
     // const { module, instance } = await WebAssembly.instantiateStreaming(responsePromise);
 
     // console.log('module', module);
     // console.log('instance', instance);
     // const wasmModule = await wasmInit({});
     // const result = await initWasm();
-    console.log('result', result);
+    // console.log('result', result);
     //
     // const wasmModule = await createFFmpegCore({
     //   wasmUrl: url,
     // });
+
+    const wasmURL = `${baseURL}/ffmpeg-core.wasm`;
+    const coreURL = `${baseURL}/ffmpeg-core.js`;
+    const _coreURL = `${coreURL}`;
+    const workerURL = _coreURL.replace(/.js$/g, '.worker.js');
+
     // console.log('self.createFFmpegCore()', wasmModule);
-    // this.ffmpeg = await self.createFFmpegCore();
-    // console.log('this.ffmpeg', this.ffmpeg);
+    this.ffmpeg = await self.createFFmpegCore({
+      // Fix `Overload resolution failed.` when using multi-threaded ffmpeg-core.
+      // Encoded wasmURL and workerURL in the URL as a hack to fix locateFile issue.
+      mainScriptUrlOrBlob: `${baseURL}#${btoa(JSON.stringify({ wasmURL, workerURL }))}`,
+    });
+    console.log('this.ffmpeg', this.ffmpeg);
 
     // this.ffmpeg.setLogger((data: any) => self.postMessage({ type: this.FFMessageType.LOG, data }));
 
