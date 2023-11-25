@@ -60,117 +60,10 @@
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
-  // const { FFmpegWorker } = await import('@root/src/pages/content/FFmpeg-ES.js');
-
-  // const { fetchFile, toBlobURL } = await import('@ffmpeg/util');
-
-  // console.log('fetchFile', fetchFile);
-  // const ffmpeg = new FFmpegWorker();
-  // // ffmpeg.on('log', ({ type, message }) => {
-  // //   console.log('type', type);
-  // //   console.log('message', message);
-  // // });
-  // console.log('ffmpeg', ffmpeg);
-
-  // // console.log('init');
-
-  // // console.log('content loading...');
-
-  // const loaded = await ffmpeg.load();
-
-  // console.log('loaded?', loaded);
-
-  // console.log('content loaded');
-
-  // const processVideo = async (file: File) => {
-  //   // Initialize FFmpeg
-  //   console.log('initializing', file);
-  //   if (!ffmpeg?.loaded) {
-  //     throw new Error('ffmpeg not loaded');
-  //     //await ffmpeg.load();
-  //   }
-  //   console.log('done loading');
-
-  //   // Write the file to FFmpeg's virtual file system
-  //   const tempFile = await fetchFile(file);
-  //   console.log('tempFile', tempFile);
-  //   await ffmpeg.writeFile({ path: 'temp.mov', data: tempFile });
-
-  //   await ffmpeg.exec({ args: ['-i', 'temp.mov', 'output.mp4'] });
-
-  //   // .catch(err => {
-  //   //   console.log('err writing file', err);
-  //   // });
-
-  //   // const didItWork = await ffmpeg.console.log('happen', happen);
-
-  //   const original = await ffmpeg.readFile({ path: 'temp.mov' });
-  //   const compressed = await ffmpeg.readFile({ path: 'output.mp4' });
-
-  //   console.log('original', original);
-  //   console.log('compressed', compressed);
-
-  //   // ffmpeg.writeFile('test.txt', 'Hello world123').catch(err => {
-  //   //   console.log('err writing file', err);
-  //   // });
-
-  //   // const textTxt = await ffmpeg.readFile('text.txt').catch(err => {
-  //   //   console.log('err reading file', err);
-  //   // });
-
-  //   // console.log('textTxt', textTxt);
-
-  //   // const readTempFile = await ffmpeg.readFile('temp.file');
-  //   // console.log('readTempFile', readTempFile);
-
-  //   // console.log('before run file', file);
-  //   // // Run FFmpeg command to compress the video
-
-  //   // const output = await ffmpeg.readFile('temp.mov').catch(err => console.error(err));
-  //   // const data = new Uint8Array(output as ArrayBuffer);
-  //   // console.log('output', output);
-  //   // console.log('data buffer', data.buffer);
-
-  //   // console.log('after run');
-
-  //   // Read the result
-  //   // const data = await ffmpeg.readFile('output.mp4');
-  //   // console.log('data after read', data);
-  //   // console.log('data.buffer', data.buffer);
-
-  //   // // Convert the data to a Blob
-  //   // // const compressedFile = new Blob([data.buffer], { type: 'video/mp4' });
-  //   // const compressedFile = new Blob([data?.buffer], { type: 'video/mp4' });
-
-  //   // return data.buffer;
-  // };
-
-  // if (!(chrome && chrome.runtime && chrome.runtime.sendMessage)) {
-  //   throw new Error('chrome.runtime.sendMessage is not available.');
-  // }
-
-  // // console.log('ffmpegModule:', ffmpegModule);
-  // // console.log('test2', test2);
-
-  // // eslint-disable-next-line @typescript-eslint/no-unused-vars
-
-  // const sendFileToBeCompressed = (file: File) => {
-  //   console.log('chrome', chrome.runtime.sendMessage);
-  //   // Make into promise
-  //   console.log('before sending file');
-  //   console.log('chrome', chrome);
-  //   console.log('file', file);
-  //   try {
-  //     return processVideo(file)
-  //       .then(response => {
-  //         console.log('response', response);
-  //         return response;
-  //       })
-  //       .catch(err => console.error(err));
-  //   } catch (error) {
-  //     console.log('error', error);
-  //   }
-  // };
+  const { FileChunkReceiver } = await import('@pages/content/FileChunkReceiver');
+  const fileChunkReceiver = new FileChunkReceiver(({ blob, progress }) => {
+    console.log('response', blob, progress);
+  });
 
   // // Function to add drag-and-drop event listeners to a textarea
   // const addDragAndDropListeners = (textarea: HTMLTextAreaElement) => {
@@ -266,4 +159,16 @@
       }
     });
   });
+
+  // Init setting of the current tab.
+
+  // On tab focus change, update the current tab.
+
+  chrome.runtime.sendMessage({ type: 'initTab' }, response => {
+    if (response.success) {
+      console.log('initTab success');
+    }
+  });
+
+  console.log('fileChunkReceiver', fileChunkReceiver);
 })();
