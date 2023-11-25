@@ -60,7 +60,7 @@ const init = async () => {
     // console.log('before proc', ffmpeg.FS.readdir('/proc')); // List files in the root directory
 
     // Compress the hello.mov file to a .mp4 file, then print the file size
-    const value = await ffmpeg.exec('-i', 'input.mp4', 'output.avi');
+    const value = await ffmpeg.exec('-i', 'input.mp4', '-b:v', '200k', '-b:a', '96k', 'output.mp4');
 
     // const value = await ffmpeg.exec('-i', 'hello.mp4', '-vcodec', 'libx264', '-acodec', 'aac', 'output.mp4');
     console.log('value', value);
@@ -84,15 +84,17 @@ const init = async () => {
     // }
 
     // await ffmpeg.exec('-i', 'hello.mov', 'output.mp4');
-    const output = ffmpeg.FS.readFile('output.avi', { encoding: 'binary' });
+    const output = ffmpeg.FS.readFile('output.mp4', { encoding: 'binary' });
+    if (typeof output === 'string') {
+      throw new Error('output is string');
+    }
     console.log('output', output);
     // Make output into file and put into downloaded file
-    const blobOutput = new Blob([output], { type: 'video/avi' });
 
     // console.log('output length', output.length);
     console.log('hit after');
 
-    await fileChunkSender.sendFile({ blob: blobOutput, tabId: currentTabId });
+    await fileChunkSender.sendFile({ data: output, tabId: currentTabId, fileType: 'output.mp4' });
 
     console.log('hit after sending file');
   };

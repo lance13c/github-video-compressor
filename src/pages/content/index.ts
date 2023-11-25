@@ -57,12 +57,35 @@
 // const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm';
 // const baseURL_UMD = 'https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/umd';
 
+const downloadBlob = (blob: Blob, fileName: string) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+
+  a.href = url;
+  a.download = fileName; // Name of the downloaded file
+  document.body.appendChild(a);
+  a.click();
+
+  // Cleanup: revoke the object URL and remove the anchor element
+  URL.revokeObjectURL(url);
+  a.remove();
+};
+
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
   const { FileChunkReceiver } = await import('@pages/content/FileChunkReceiver');
   const fileChunkReceiver = new FileChunkReceiver(({ blob, progress }) => {
     console.log('response', blob, progress);
+    // Create a fileName based on the file extension
+
+    if (blob) {
+      const fileName = `video.${blob.type.split('/')[1]}`;
+      console.log('fileName', fileName);
+      console.log('downloading blob', blob, progress);
+      downloadBlob(blob, fileName);
+      console.log('download complete');
+    }
   });
 
   // // Function to add drag-and-drop event listeners to a textarea
@@ -164,11 +187,14 @@
 
   // On tab focus change, update the current tab.
 
-  chrome.runtime.sendMessage({ type: 'initTab' }, response => {
-    if (response.success) {
-      console.log('initTab success');
-    }
-  });
+  // Only if the website is github
+  if (window.location.href.includes('github')) {
+    chrome.runtime.sendMessage({ type: 'initTab' }, response => {
+      if (response.success) {
+        console.log('initTab success');
+      }
+    });
+  }
 
   console.log('fileChunkReceiver', fileChunkReceiver);
 })();
