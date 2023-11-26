@@ -10,6 +10,7 @@ const manifest = {
   version: packageJson.version,
   description: packageJson.description,
   permissions: ['cookies', 'storage', 'sidePanel'],
+  host_permissions: ['https://github.com/*'],
   side_panel: {
     default_path: 'src/pages/sidepanel/index.html',
   },

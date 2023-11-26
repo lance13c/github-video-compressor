@@ -81,12 +81,16 @@ export class FileChunkSender {
       const chunkUint8 = await this.readFileChunk(file, start, end);
       const base64Chunk = uint8ArrayToBase64(chunkUint8);
 
-      const message = {
+      // In the content.js get the url of the browser tab
+      // const url =
+
+      const message: FileChunkMessage = {
         type: 'fileChunk',
         chunk: base64Chunk,
         progress: end / fileSize,
         fileType: file.type,
         isComplete: end >= fileSize,
+        url: window.location.href,
       };
 
       chrome.runtime.sendMessage(message);

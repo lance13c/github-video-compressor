@@ -1,6 +1,7 @@
 // FileChunkSender.ts
 
 import { base64ToUint8Array, uint8ArrayToBase64 } from '@root/src/pages/background/binaryHelpers';
+import { GithubUploader } from '@root/src/pages/background/GithubUploader';
 
 export type FileChunkMessage = {
   type: 'fileChunk';
@@ -8,6 +9,7 @@ export type FileChunkMessage = {
   fileType: string;
   progress: number;
   isComplete: boolean;
+  url?: string;
 };
 
 export class BackgroundFileChunkSender {
@@ -93,20 +95,32 @@ export class BackgroundFileChunkSender {
   }
 }
 
+// function formatCookies(cookies): string {
+//   return cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
+// }
+
 export class BackgroundFileChunkReceiver {
   private fileChunks: Uint8Array[] = [];
   private fileType: string = '';
   private totalReceived: number = 0;
   private listener: (blob: Blob, tabId: number) => Promise<void>;
   private tabId: number = -1;
+  private cookies: chrome.cookies.Cookie[] = [];
+  private url: string = '';
 
   constructor(listener: (blob: Blob, tabId: number) => Promise<void>) {
     this.listener = listener;
-    chrome.runtime.onMessage.addListener((message, sender) => {
-      if (message.type === 'fileChunk') {
-        this.tabId = sender.tab?.id;
-        this.handleFileChunk(message);
-      }
+    chrome.runtime.onMessage.addListener((message: FileChunkMessage, sender) => {
+      this.url = message.url;
+      chrome.cookies.getAll({ url: 'https://github.com' }, fetchedCookies => {
+        console.log('cookies', fetchedCookies);
+        this.cookies = fetchedCookies;
+
+        if (message.type === 'fileChunk') {
+          this.tabId = sender.tab?.id;
+          this.handleFileChunk(message);
+        }
+      });
     });
   }
 
@@ -121,10 +135,49 @@ export class BackgroundFileChunkReceiver {
     }
   }
 
-  private assembleFile(): void {
-    const completeFile = new Blob(this.fileChunks, { type: this.fileType });
+  private async assembleFile() {
+    const completeFile = new File(this.fileChunks, 'test.mp4', { type: this.fileType });
     console.log('File received and assembled', completeFile);
-    this.listener(completeFile, this.tabId);
+
+    console.log('url', this.url);
+    console.log('cookies', this.cookies);
+
+    const test_repo = this.url.split('/').slice(-2).join('/');
+    console.log('test_repo', test_repo);
+
+    const token = this.cookies.find(cookie => cookie.name === 'user_session')?.value;
+
+    const githubUploader = new GithubUploader('lance13c/github-video-compressor', token);
+
+    // const arrayBuffer = await completeFile.arrayBuffer();
+    // const uint8Array = new Uint8Array(arrayBuffer);
+    // const base64UrlFile = uint8ArrayToBase64(uint8Array);
+
+    githubUploader.prepareImage('test.mp4', completeFile.size).then(response => {
+      console.log('response', response);
+      githubUploader.uploadImage(completeFile, response);
+    });
+
+    // const url = 'https://github.com/upload/policies/assets'; // Replace with the actual upload URL
+    // const formData = new FormData();
+    // formData.append('file', completeFile); // Replace 'yourFile' with the file object you want to upload
+
+    // fetch(url, {
+    //   method: 'POST',
+    //   headers: {
+    //     Cookie: this.cookies,
+    //     // Add any other necessary headers
+    //   },
+    //   body: formData,
+    //   credentials: 'include', // Important for including cookies in same-origin requests
+    // })
+    //   .then(response => response.json())
+    //   .then(data => console.log(data))
+    //   .catch(error => {
+    //     console.error('Error');
+    //     console.error(error.message);
+    //   });
+    // this.listener(completeFile, this.tabId);
 
     // Additional actions to handle the file, such as saving or processing
   }

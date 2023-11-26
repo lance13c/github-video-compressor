@@ -12,18 +12,26 @@ const downloadBlob = (blob: Blob, fileName: string) => {
   a.remove();
 };
 
-function getCookies(domain, callback) {
-  chrome.cookies.getAll({ domain: domain }, function (cookies) {
-    callback(cookies);
-  });
-}
-
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
   const { FileChunkReceiver, FileChunkSender } = await import('@root/src/pages/content/ContentFileChunkUtil');
+  const { GithubUploader } = await import('@root/src/pages/background/GithubUploader');
   const sender = new FileChunkSender();
-  const fileInputElement: HTMLInputElement | null = null;
+
+  const authenticity_token = document.querySelector('.js-data-upload-policy-url-csrf')?.getAttribute('value');
+  if (!authenticity_token) {
+    throw new Error('authenticity_token not found');
+  }
+
+  const repository_id = document
+    .querySelector('meta[name="octolytics-dimension-repository_id"]')
+    ?.getAttribute('content');
+  if (!repository_id) {
+    throw new Error('repository_id not found');
+  }
+
+  // octolytics-dimension-repository_id -> element id to get the repository id
 
   new FileChunkReceiver(({ blob, progress }) => {
     console.log('response', blob, progress);
@@ -90,6 +98,7 @@ function getCookies(domain, callback) {
   fileInputs.forEach(fileInput => {
     fileInput.addEventListener('change', (e: Event) => {
       const target = e.target as HTMLInputElement;
+
       if (!target || target?.type !== 'file') {
         return;
       }
@@ -101,32 +110,40 @@ function getCookies(domain, callback) {
         // Iterate over the FileList
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
-
-          console.log('file size', file.size);
-          getCookies('github.com', cookies => {
-            console.log('cookies', cookies);
-            // const formData = new FormData();
-            // formData.append('name', file.name);
-            // formData.append('size', `${file.size}`);
-            // formData.append('content_type', file.type);
-            // formData.append('authenticity_token', 'COMePYvq-SRWtIaT4dNupSlsIrytAndPo2EGHw1z0q-hINsqIKQHO2KUhzWOKdOcH6eNO92vOAHXmXi9gRUarg');
-            // formData.append('repository_id', '720251838');
-          });
           // if (file.size > TRIGGER_SIZE) {
-          // e.stopPropagation();
-          // e.preventDefault();
-          // fileInputElement = e.target as HTMLInputElement;
+          e.stopPropagation();
+          e.preventDefault();
 
           // Check if the file type includes 'video'
-          // if (file.type.includes('video')) {
-          //   sendFileToBeCompressed(file)
-          //     .then(response => {
-          //       console.log('finish compressed video', response);
-          //     })
-          //     .catch(err => {
-          //       console.log('err', err);
-          //     });
-          // }
+          if (file.type.includes('video')) {
+            const githubUploader = new GithubUploader();
+            e.stopPropagation();
+            e.preventDefault();
+            // debugger;
+            githubUploader
+              .startImageUpload({
+                imageName: file.name,
+                imageSize: file.size,
+                authenticity_token,
+                content_type: file.type,
+                repository_id: '720251838',
+                file,
+              })
+              .then(response => {
+                console.log('start Image response', response);
+                if (!response?.upload_url) {
+                  throw new Error('upload_url not found');
+                }
+                // githubUploader.uploadImage(file, response);
+              });
+          }
+          // sendFileToBeCompressed(file)
+          //   .then(response => {
+          //     console.log('finish compressed video', response);
+          //   })
+          //   .catch(err => {
+          //     console.log('err', err);
+          //   });
           // }
         }
       }
