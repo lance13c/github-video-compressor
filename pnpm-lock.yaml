@@ -8,6 +8,9 @@ dependencies:
   '@ffmpeg/core':
     specifier: ^0.12.4
     version: 0.12.4
+  '@ffmpeg/core-mt':
+    specifier: ^0.12.4
+    version: 0.12.4
   '@ffmpeg/ffmpeg':
     specifier: ^0.12.7
     version: 0.12.7
@@ -773,6 +776,11 @@ packages:
     resolution: {integrity: sha512-Kn7K8dx/5U6+cT1yEhpX1w4PCSg0M+XyRILPgvwcEBjerFWCwQj5sbr3/VmxqV0JGHCBCzyd6LxypEuehypY1w==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dev: true
+
+  /@ffmpeg/core-mt@0.12.4:
+    resolution: {integrity: sha512-kExX/zzh+PlKqfgoFUnSmZzywHS/MFmaLAM6vRUc7p9G284tkt5gDud2mWmCdHCauWwppuJ6BOY6mqI5I6kMxg==}
+    engines: {node: '>=16.x'}
+    dev: false
 
   /@ffmpeg/core@0.12.4:
     resolution: {integrity: sha512-m+H+P66TSEPlf1vK5WwVDr+Uksd1GULi7jk4o/447X5HQouTLaZjicAXC00C/IrrmyqJ8YX/8cfhqMryvNZGSg==}

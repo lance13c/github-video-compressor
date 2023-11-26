@@ -43,7 +43,7 @@ export default defineConfig({
   ],
   publicDir,
   optimizeDeps: {
-    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util', '@syntect/wasm'],
+    exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util', '@ffmpeg/core-mt', '@syntect/wasm'],
   },
   build: {
     outDir,

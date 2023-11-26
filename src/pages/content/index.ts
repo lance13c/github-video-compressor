@@ -163,7 +163,6 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
 
         const files = target.files;
 
-        console.log('files loaded', files);
         // Iterate over the FileList
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
