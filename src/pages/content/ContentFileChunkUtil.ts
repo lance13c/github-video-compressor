@@ -42,6 +42,9 @@ export class FileChunkReceiver {
         }
 
         sendResponse({ next: true });
+      } else if (message.type === 'progress') {
+        console.info('progress', message);
+        sendResponse({ next: true });
       }
     });
   }

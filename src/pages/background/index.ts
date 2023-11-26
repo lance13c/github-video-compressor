@@ -8,17 +8,23 @@ import {
   BackgroundFileChunkSender,
 } from '@root/src/pages/background/BackgroundFileChunkUtil';
 
+// Extract frame number from logs
+// function extractCurrentFrame(log: string): number | null {
+//   const regex = new RegExp(/frame=\s*(\d+)/);
+//   const frameMatch = regex.exec(log)?.[1];
+//   if (frameMatch) {
+//     return parseInt(frameMatch, 10);
+//   }
+//   return null;
+// }
+
 const init = async () => {
   console.log('init');
   const ffmpeg: FFmpegCoreModule = await createFFmpegCore();
   const fileChunkSender = new BackgroundFileChunkSender();
+  // let currentTabId: number = -1;
 
   const processVideo = async (blob: Blob, fileName: string) => {
-    // const writeFileResponse = await ffmpeg.FS.writeFile('hello.mp4', uint8Array);
-    // console.log('writeFileResponse', writeFileResponse);
-
-    // get uint8Array for /dist/icon-128.png
-
     const arrayBufferImage = await blob.arrayBuffer();
     const uint8ArrayImage = new Uint8Array(arrayBufferImage);
     console.log('original uint8ArrayImage', uint8ArrayImage);
@@ -26,16 +32,9 @@ const init = async () => {
     const writeFileResponse = await ffmpeg.FS.writeFile(fileName, uint8ArrayImage);
     console.log('writeFileResponse', writeFileResponse);
 
-    console.log('before directory', ffmpeg.FS.readdir('/')); // List files in the root directory
-    // console.log('before tmp', ffmpeg.FS.readdir('/tmp')); // List files in the root directory
-    // console.log('before dev', ffmpeg.FS.readdir('/dev')); // List files in the root directory
-    // console.log('before proc', ffmpeg.FS.readdir('/proc')); // List files in the root directory
-
-    // Compress the hello.mov file to a .mp4 file, then print the file size
     const outputVideoFileName = 'output-video.mp4';
-    // const value = await ffmpeg.exec('-i', fileName, '-b:v', '2000k', '-b:a', '96k', outputVideoFileName);
     // -c:v h264_nvenc -preset fast
-    const value = await ffmpeg.exec(
+    await ffmpeg.exec(
       '-i',
       fileName,
       '-vf',
@@ -43,38 +42,19 @@ const init = async () => {
       '-c:v',
       'libx264',
       '-crf',
-      '26',
+      '28',
       '-preset',
       'ultrafast',
       '-an',
       outputVideoFileName,
     );
 
-    // const value = await ffmpeg.exec('-i', 'hello.mp4', '-vcodec', 'libx264', '-acodec', 'aac', 'output.mp4');
-    console.log('value', value);
-
-    console.log('after directory', ffmpeg.FS.readdir('/')); // List files in the root directory
-    // console.log('after tmp', ffmpeg.FS.readdir('/tmp')); // List files in the root directory
-    // console.log('after dev', ffmpeg.FS.readdir('/dev')); // List files in the root directory
-    // console.log('after proc', ffmpeg.FS.readdir('/proc')); // List files in the root directory
-
-    try {
-      const version = await ffmpeg.exec('-version');
-      console.log('FFmpeg Version:', version);
-    } catch (error) {
-      console.error('Error executing FFmpeg:', error);
-    }
-
-    // await ffmpeg.exec('-i', 'hello.mov', 'output.mp4');
     const output = ffmpeg.FS.readFile(outputVideoFileName, { encoding: 'binary' });
     if (typeof output === 'string') {
       throw new Error('output is string');
     }
     console.log('output', output);
     // Make output into file and put into downloaded file
-
-    // console.log('output length', output.length);
-    console.log('hit after');
 
     console.log('hit after sending file');
     return {
@@ -97,6 +77,11 @@ const init = async () => {
 
   ffmpeg.setLogger(log => {
     console.info(log?.message);
+
+    // if (log?.message) {
+    //   const frame = extractCurrentFrame(log.message);
+    //   chrome.runtime.sendMessage(currentTabId, { type: 'progress', frame });
+    // }
   });
 };
 
