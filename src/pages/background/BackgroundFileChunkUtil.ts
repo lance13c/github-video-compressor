@@ -14,8 +14,8 @@ export type FileChunkMessage = {
 export class BackgroundFileChunkSender {
   private readonly chunkSize: number;
 
-  constructor(chunkSize: number = 1024 * 1024 * 1024) {
-    this.chunkSize = chunkSize; // Default to 1MB chunks
+  constructor(chunkSize: number = 99 * 1024 * 1024) {
+    this.chunkSize = chunkSize; // Default to 99MB chunks
   }
 
   private async sendChunk({
@@ -94,32 +94,22 @@ export class BackgroundFileChunkSender {
   }
 }
 
-// function formatCookies(cookies): string {
-//   return cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
-// }
-
 export class BackgroundFileChunkReceiver {
   private fileChunks: Uint8Array[] = [];
   private fileType: string = '';
   private totalReceived: number = 0;
   private listener: (blob: Blob, tabId: number) => Promise<void>;
   private tabId: number = -1;
-  private cookies: chrome.cookies.Cookie[] = [];
   private url: string = '';
 
   constructor(listener: (blob: Blob, tabId: number) => Promise<void>) {
     this.listener = listener;
     chrome.runtime.onMessage.addListener((message: FileChunkMessage, sender) => {
       this.url = message.url;
-      chrome.cookies.getAll({ url: 'https://github.com' }, fetchedCookies => {
-        console.log('cookies', fetchedCookies);
-        this.cookies = fetchedCookies;
-
-        if (message.type === 'fileChunk') {
-          this.tabId = sender.tab?.id;
-          this.handleFileChunk(message);
-        }
-      });
+      if (message.type === 'fileChunk') {
+        this.tabId = sender.tab?.id;
+        this.handleFileChunk(message);
+      }
     });
   }
 
@@ -137,9 +127,6 @@ export class BackgroundFileChunkReceiver {
   private async assembleFile() {
     const completeFile = new File(this.fileChunks, 'test.mp4', { type: this.fileType });
     console.log('File received and assembled', completeFile);
-
-    console.log('url', this.url);
-    console.log('cookies', this.cookies);
 
     const test_repo = this.url.split('/').slice(-2).join('/');
     console.log('test_repo', test_repo);

@@ -48,7 +48,7 @@ export class FileChunkReceiver {
 }
 
 export class FileChunkSender {
-  private readonly chunkSize: number = 1024 * 1024; // Default to 1MB chunks
+  private readonly chunkSize: number = 99 * 1024 * 1024; // Default to 99MB chunks
 
   constructor(chunkSize?: number) {
     if (chunkSize) {
@@ -80,6 +80,7 @@ export class FileChunkSender {
       const end = Math.min(start + this.chunkSize, fileSize);
       const chunkUint8 = await this.readFileChunk(file, start, end);
       const base64Chunk = uint8ArrayToBase64(chunkUint8);
+      console.info('chunk progress', end / fileSize);
 
       // In the content.js get the url of the browser tab
       // const url =
