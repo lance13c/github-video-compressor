@@ -1,9 +1,10 @@
 interface PrepareImageResponse {
   upload_url: string;
+  asset_upload_url: string;
+  asset_upload_authenticity_token: string;
   form: {
     [key: string]: string;
   };
-  // ... include other response properties as needed
 }
 
 interface ImageStartResponse {
@@ -21,6 +22,7 @@ export class GithubUploader {
 
   constructor() {}
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async request(url: string, method: string = 'GET', formData: FormData, headers?: HeadersInit): Promise<any> {
     const response = await fetch(url, {
       method: method,
@@ -61,14 +63,18 @@ export class GithubUploader {
     formData.append('repository_id', repository_id);
     formData.append('content_type', content_type);
 
-    const prepareResponse = await this.request(this.baseUrl + this.prepare_route, 'POST', formData, {
-      // Do not set the content-type header, the browser will set it
-      Accept: 'application/json',
-    });
+    const prepareResponse: PrepareImageResponse = await this.request(
+      this.baseUrl + this.prepare_route,
+      'POST',
+      formData,
+      {
+        // Do not set the content-type header, the browser will set it
+        Accept: 'application/json',
+      },
+    );
 
     // Do this asynchronously
     const imageUploadResponse = this.uploadImageToS3(file, prepareResponse);
-    console.log('imageUploadResponse', imageUploadResponse);
     imageUploadResponse.then(res => {
       imageUploadCompleteCallback?.(res);
     });

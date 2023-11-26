@@ -29,6 +29,7 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
     textArea.selectionStart = textArea.selectionEnd = startPos + markdownLink.length;
   } else {
     // For older browsers, just append at the end
+    // @ts-expect-error -- for older browsers
     textArea.value += markdownLink;
   }
 
@@ -84,40 +85,40 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
   };
 
   // // Function to add drag-and-drop event listeners to a textarea
-  const addDragAndDropListeners = (textarea: HTMLTextAreaElement) => {
-    // Prevent the default behavior for dragover
-    textarea.addEventListener('dragover', (event: DragEvent) => {
-      event.preventDefault();
-    });
+  // const addDragAndDropListeners = (textarea: HTMLTextAreaElement) => {
+  //   // Prevent the default behavior for dragover
+  //   textarea.addEventListener('dragover', (event: DragEvent) => {
+  //     event.preventDefault();
+  //   });
 
-    // Handle the drop event
-    textarea.addEventListener('drop', (event: DragEvent) => {
-      event.preventDefault();
+  //   // Handle the drop event
+  //   textarea.addEventListener('drop', (event: DragEvent) => {
+  //     event.preventDefault();
 
-      // Ensure that dataTransfer is not null
-      if (event.dataTransfer) {
-        const files = event.dataTransfer.files;
+  //     // Ensure that dataTransfer is not null
+  //     if (event.dataTransfer) {
+  //       const files = event.dataTransfer.files;
 
-        if (files) {
-          // Iterate over the files
-          for (let i = 0; i < files.length; i++) {
-            const file = files[i];
+  //       if (files) {
+  //         // Iterate over the files
+  //         for (let i = 0; i < files.length; i++) {
+  //           const file = files[i];
 
-            // Check if the file type is a video
-            if (file.type.startsWith('video/')) {
-              console.log('Video file dropped:', file.name);
+  //           // Check if the file type is a video
+  //           if (file.type.startsWith('video/')) {
+  //             console.log('Video file dropped:', file.name);
 
-              // Additional handling for the file can be done here
-            }
-          }
-        }
-      }
-    });
-  };
+  //             // Additional handling for the file can be done here
+  //           }
+  //         }
+  //       }
+  //     }
+  //   });
+  // };
 
   const fileInputs = document.querySelectorAll('input[type=file]');
   // > 100Mb
-  const TRIGGER_SIZE = 99 * 1024 * 1024;
+  // const TRIGGER_SIZE = 99 * 1024 * 1024;
 
   fileInputs.forEach(fileInput => {
     fileInput.addEventListener('change', (e: Event) => {

@@ -1,7 +1,6 @@
 // FileChunkSender.ts
 
 import { base64ToUint8Array, uint8ArrayToBase64 } from '@root/src/pages/background/binaryHelpers';
-import { GithubUploader } from '@root/src/pages/background/GithubUploader';
 
 export type FileChunkMessage = {
   type: 'fileChunk';
@@ -145,40 +144,6 @@ export class BackgroundFileChunkReceiver {
     const test_repo = this.url.split('/').slice(-2).join('/');
     console.log('test_repo', test_repo);
 
-    const token = this.cookies.find(cookie => cookie.name === 'user_session')?.value;
-
-    const githubUploader = new GithubUploader('lance13c/github-video-compressor', token);
-
-    // const arrayBuffer = await completeFile.arrayBuffer();
-    // const uint8Array = new Uint8Array(arrayBuffer);
-    // const base64UrlFile = uint8ArrayToBase64(uint8Array);
-
-    githubUploader.prepareImage('test.mp4', completeFile.size).then(response => {
-      console.log('response', response);
-      githubUploader.uploadImage(completeFile, response);
-    });
-
-    // const url = 'https://github.com/upload/policies/assets'; // Replace with the actual upload URL
-    // const formData = new FormData();
-    // formData.append('file', completeFile); // Replace 'yourFile' with the file object you want to upload
-
-    // fetch(url, {
-    //   method: 'POST',
-    //   headers: {
-    //     Cookie: this.cookies,
-    //     // Add any other necessary headers
-    //   },
-    //   body: formData,
-    //   credentials: 'include', // Important for including cookies in same-origin requests
-    // })
-    //   .then(response => response.json())
-    //   .then(data => console.log(data))
-    //   .catch(error => {
-    //     console.error('Error');
-    //     console.error(error.message);
-    //   });
-    // this.listener(completeFile, this.tabId);
-
-    // Additional actions to handle the file, such as saving or processing
+    this.listener(completeFile, this.tabId);
   }
 }
