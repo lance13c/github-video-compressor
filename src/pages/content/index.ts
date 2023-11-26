@@ -12,6 +12,30 @@ const downloadBlob = (blob: Blob, fileName: string) => {
   a.remove();
 };
 
+function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: string): void {
+  const markdownLink = `[${name}](${href})`;
+
+  // Check if the browser supports `selectionStart` and `selectionEnd`
+  if ('selectionStart' in textArea && 'selectionEnd' in textArea) {
+    const startPos = textArea.selectionStart;
+    const endPos = textArea.selectionEnd;
+    const beforeText = textArea.value.substring(0, startPos);
+    const afterText = textArea.value.substring(endPos);
+
+    // Insert the markdown link where the cursor is, or at the end if no selection
+    textArea.value = beforeText + markdownLink + afterText;
+
+    // Move the cursor to the end of the new link
+    textArea.selectionStart = textArea.selectionEnd = startPos + markdownLink.length;
+  } else {
+    // For older browsers, just append at the end
+    textArea.value += markdownLink;
+  }
+
+  // Optionally, focus the textarea
+  textArea.focus();
+}
+
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
@@ -104,6 +128,14 @@ const downloadBlob = (blob: Blob, fileName: string) => {
       }
 
       if (target && target.type === 'file') {
+        // const fileAttachmentInputName = (e.target as HTMLInputElement).getAttribute('id');
+        const textAreaElement = document.querySelector(`.js-upload-markdown-image textarea`) as HTMLTextAreaElement;
+        // console.log('textArea', textAreaElement);
+
+        if (!textAreaElement) {
+          throw new Error('textAreaElement not found');
+        }
+
         const files = target.files;
 
         console.log('files loaded', files);
@@ -128,13 +160,17 @@ const downloadBlob = (blob: Blob, fileName: string) => {
                 content_type: file.type,
                 repository_id: '720251838',
                 file,
+                imageUploadCompleteCallback: () => {
+                  console.log('Upload complete');
+                },
               })
-              .then(response => {
-                console.log('start Image response', response);
-                if (!response?.upload_url) {
-                  throw new Error('upload_url not found');
+              .then(imageResponse => {
+                console.log('imageResponse', imageResponse);
+                if (!imageResponse) {
+                  throw new Error('imageResponse is invalid');
                 }
-                // githubUploader.uploadImage(file, response);
+
+                injectMarkdownLink(textAreaElement, file.name, imageResponse.href);
               });
           }
           // sendFileToBeCompressed(file)

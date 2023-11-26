@@ -6,6 +6,15 @@ interface PrepareImageResponse {
   // ... include other response properties as needed
 }
 
+interface ImageStartResponse {
+  content_type: string;
+  href: string;
+  id: number;
+  name: string;
+  original_name: string | null;
+  size: number;
+}
+
 export class GithubUploader {
   private baseUrl: string = 'https://github.com';
   private prepare_route: string = '/upload/policies/assets';
@@ -35,6 +44,7 @@ export class GithubUploader {
     repository_id,
     content_type,
     file,
+    imageUploadCompleteCallback,
   }: {
     imageName: string;
     imageSize: number;
@@ -42,7 +52,8 @@ export class GithubUploader {
     repository_id: string;
     content_type: string;
     file: File;
-  }): Promise<PrepareImageResponse> {
+    imageUploadCompleteCallback?: (response: Response) => void;
+  }): Promise<ImageStartResponse> {
     const formData = new FormData();
     formData.append('name', imageName);
     formData.append('size', `${imageSize}`);
@@ -58,6 +69,9 @@ export class GithubUploader {
     // Do this asynchronously
     const imageUploadResponse = this.uploadImageToS3(file, prepareResponse);
     console.log('imageUploadResponse', imageUploadResponse);
+    imageUploadResponse.then(res => {
+      imageUploadCompleteCallback?.(res);
+    });
 
     const putAssetFormData = new FormData();
     putAssetFormData.append('authenticity_token', prepareResponse.asset_upload_authenticity_token);
@@ -68,7 +82,7 @@ export class GithubUploader {
     });
   }
 
-  private async uploadImageToS3(file: File, uploadData: PrepareImageResponse): Promise<void> {
+  private async uploadImageToS3(file: File, uploadData: PrepareImageResponse): Promise<Response> {
     const formData = new FormData();
 
     // Add form fields from uploadData
@@ -88,5 +102,7 @@ export class GithubUploader {
     if (imageRes.status !== 204) {
       throw new Error('Image S3 upload failed');
     }
+
+    return imageRes;
   }
 }
