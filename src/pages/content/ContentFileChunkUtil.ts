@@ -51,7 +51,7 @@ export class FileChunkReceiver {
 }
 
 export class FileChunkSender {
-  private readonly chunkSize: number = 99 * 1024 * 1024; // Default to 99MB chunks
+  private readonly chunkSize: number = 35 * 1024 * 1024; // Default to 70MB chunks ish
 
   constructor(chunkSize?: number) {
     if (chunkSize) {

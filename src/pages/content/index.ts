@@ -13,7 +13,7 @@
 // };
 
 function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: string): void {
-  const markdownLink = `[${name}](${href})`;
+  const markdownLink = `\n\n[${name}](${href})\n\n`;
 
   // Check if the browser supports `selectionStart` and `selectionEnd`
   if ('selectionStart' in textArea && 'selectionEnd' in textArea) {

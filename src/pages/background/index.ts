@@ -37,15 +37,15 @@ const init = async () => {
     await ffmpeg.exec(
       '-i',
       fileName,
+      '-an',
       '-vf',
       'scale=1280:-1',
       '-c:v',
       'libx264',
       '-crf',
-      '28',
+      '15',
       '-preset',
       'ultrafast',
-      '-an',
       outputVideoFileName,
     );
 

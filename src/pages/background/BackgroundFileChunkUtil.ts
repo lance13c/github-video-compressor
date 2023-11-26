@@ -14,8 +14,8 @@ export type FileChunkMessage = {
 export class BackgroundFileChunkSender {
   private readonly chunkSize: number;
 
-  constructor(chunkSize: number = 99 * 1024 * 1024) {
-    this.chunkSize = chunkSize; // Default to 99MB chunks
+  constructor(chunkSize: number = 35 * 1024 * 1024) {
+    this.chunkSize = chunkSize; // Default to 70MB chunks ish
   }
 
   private async sendChunk({
