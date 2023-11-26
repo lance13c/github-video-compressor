@@ -1,62 +1,3 @@
-/**
- * DO NOT USE import someModule from '...';
- *
- * @issue-url https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite/issues/160
- *
- * Chrome extensions don't support modules in content scripts.
- * If you want to use other modules in content scripts, you need to import them via these files.
- *
- */
-
-// function createBlob(data) {
-//   return new Blob([data], { type: 'video/mp4' }); // Adjust the MIME type if necessary
-// }
-
-// function createBlobUrl(blob) {
-//   return URL.createObjectURL(blob);
-// }
-
-// function downloadVideo(data) {
-//   console.log('data', data);
-//   const blob = createBlob(data);
-//   const url = createBlobUrl(blob);
-//   const a = document.createElement('a');
-
-//   a.href = url;
-//   a.download = 'compressed_video.mp4'; // Name of the downloaded file
-//   document.body.appendChild(a);
-//   a.click();
-
-//   // Cleanup: revoke the object URL and remove the anchor element
-//   URL.revokeObjectURL(url);
-//   a.remove();
-// }
-
-// function readFileAsArrayBuffer(file) {
-//   return new Promise((resolve, reject) => {
-//     const reader = new FileReader();
-//     reader.onload = () => resolve(reader.result);
-//     reader.onerror = () => reject(reader.error);
-//     reader.readAsArrayBuffer(file);
-//   });
-// }
-
-// function arrayBufferToBlob(arrayBuffer, mimeType) {
-//   return new Blob([arrayBuffer], { type: mimeType });
-// }
-
-// function blobToFile(blob, fileName) {
-//   return new File([blob], fileName, { type: blob.type });
-// }
-
-// function arrayBufferToFile(arrayBuffer, fileName, mimeType) {
-//   const blob = arrayBufferToBlob(arrayBuffer, mimeType);
-//   return blobToFile(blob, fileName);
-// }
-
-// const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/esm';
-// const baseURL_UMD = 'https://unpkg.com/@ffmpeg/core-mt@0.12.4/dist/umd';
-
 const downloadBlob = (blob: Blob, fileName: string) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -71,11 +12,20 @@ const downloadBlob = (blob: Blob, fileName: string) => {
   a.remove();
 };
 
+function getCookies(domain, callback) {
+  chrome.cookies.getAll({ domain: domain }, function (cookies) {
+    callback(cookies);
+  });
+}
+
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
-  const { FileChunkReceiver } = await import('@pages/content/FileChunkReceiver');
-  const fileChunkReceiver = new FileChunkReceiver(({ blob, progress }) => {
+  const { FileChunkReceiver, FileChunkSender } = await import('@root/src/pages/content/ContentFileChunkUtil');
+  const sender = new FileChunkSender();
+  const fileInputElement: HTMLInputElement | null = null;
+
+  new FileChunkReceiver(({ blob, progress }) => {
     console.log('response', blob, progress);
     // Create a fileName based on the file extension
 
@@ -83,118 +33,103 @@ const downloadBlob = (blob: Blob, fileName: string) => {
       const fileName = `video.${blob.type.split('/')[1]}`;
       console.log('fileName', fileName);
       console.log('downloading blob', blob, progress);
+
       downloadBlob(blob, fileName);
+      // fileInputElement.add;
       console.log('download complete');
     }
   });
 
+  // Send file to background.js to be compressed
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const sendFileToBeCompressed = (file: File, options: Record<string, string> = {}) => {
+    console.log('hit compress', file);
+    try {
+      return sender.sendFile(file);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // // Function to add drag-and-drop event listeners to a textarea
-  // const addDragAndDropListeners = (textarea: HTMLTextAreaElement) => {
-  //   // Prevent the default behavior for dragover
-  //   textarea.addEventListener('dragover', (event: DragEvent) => {
-  //     event.preventDefault();
-  //   });
+  const addDragAndDropListeners = (textarea: HTMLTextAreaElement) => {
+    // Prevent the default behavior for dragover
+    textarea.addEventListener('dragover', (event: DragEvent) => {
+      event.preventDefault();
+    });
 
-  //   // Handle the drop event
-  //   textarea.addEventListener('drop', (event: DragEvent) => {
-  //     event.preventDefault();
+    // Handle the drop event
+    textarea.addEventListener('drop', (event: DragEvent) => {
+      event.preventDefault();
 
-  //     // Ensure that dataTransfer is not null
-  //     if (event.dataTransfer) {
-  //       const files = event.dataTransfer.files;
-
-  //       if (files) {
-  //         // Iterate over the files
-  //         for (let i = 0; i < files.length; i++) {
-  //           const file = files[i];
-
-  //           // Check if the file type is a video
-  //           if (file.type.startsWith('video/')) {
-  //             console.log('Video file dropped:', file.name);
-
-  //             // Additional handling for the file can be done here
-  //           }
-  //         }
-  //       }
-  //     }
-  //   });
-  // };
-
-  // // Select all textarea elements
-  // const textareas = document.querySelectorAll('textarea');
-
-  // // Add drag-and-drop listeners to each textarea
-  // textareas.forEach(textarea => addDragAndDropListeners(textarea));
-
-  // // Find all file input elements on the page and add a change listener
-
-  const fileInputs = document.querySelectorAll('input[type=file]');
-
-  fileInputs.forEach(fileInput => {
-    fileInput.addEventListener('change', (e: Event) => {
-      e.stopPropagation();
-      e.preventDefault();
-      console.log('content loaded');
-      console.log(e);
-      // Ensure the target of the event is an HTMLInputElement
-      const target = e.target as HTMLInputElement;
-
-      console.log(target);
-
-      // Check if the target is a file input
-      if (target && target.type === 'file') {
-        const files = target.files;
+      // Ensure that dataTransfer is not null
+      if (event.dataTransfer) {
+        const files = event.dataTransfer.files;
 
         if (files) {
-          console.log('files loaded', files);
-          // Iterate over the FileList
+          // Iterate over the files
           for (let i = 0; i < files.length; i++) {
             const file = files[i];
 
-            // Check if the file type includes 'video'
-            if (file.type.includes('video')) {
-              console.log('Video file detected:', file.name);
-              // console.log('hit processVideo');
+            // Check if the file type is a video
+            if (file.type.startsWith('video/')) {
+              console.log('Video file dropped:', file.name);
 
-              // convert video to uint8Array and print it out
-
-              file.arrayBuffer().then(ab => {
-                const value = new Uint8Array(ab);
-                console.log('hit uint8Array');
-                console.log(value);
-              });
-
-              // console.log(Uint8Array())
-
-              // sendFileToBeCompressed(file)
-              //   .then(compressedVideo => {
-              //     console.log('finish compressed video');
-              //     console.log('compressedVideo', compressedVideo);
-              //     // downloadVideo(compressedVideo);
-              //   })
-              //   .catch(err => {
-              //     console.log('err', err);
-              //   });
-              // Perform further actions here
+              // Additional handling for the file can be done here
             }
           }
         }
       }
     });
-  });
+  };
 
-  // Init setting of the current tab.
+  const fileInputs = document.querySelectorAll('input[type=file]');
+  // > 100Mb
+  const TRIGGER_SIZE = 99 * 1024 * 1024;
 
-  // On tab focus change, update the current tab.
+  fileInputs.forEach(fileInput => {
+    fileInput.addEventListener('change', (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (!target || target?.type !== 'file') {
+        return;
+      }
 
-  // Only if the website is github
-  if (window.location.href.includes('github')) {
-    chrome.runtime.sendMessage({ type: 'initTab' }, response => {
-      if (response.success) {
-        console.log('initTab success');
+      if (target && target.type === 'file') {
+        const files = target.files;
+
+        console.log('files loaded', files);
+        // Iterate over the FileList
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+
+          console.log('file size', file.size);
+          getCookies('github.com', cookies => {
+            console.log('cookies', cookies);
+            // const formData = new FormData();
+            // formData.append('name', file.name);
+            // formData.append('size', `${file.size}`);
+            // formData.append('content_type', file.type);
+            // formData.append('authenticity_token', 'COMePYvq-SRWtIaT4dNupSlsIrytAndPo2EGHw1z0q-hINsqIKQHO2KUhzWOKdOcH6eNO92vOAHXmXi9gRUarg');
+            // formData.append('repository_id', '720251838');
+          });
+          // if (file.size > TRIGGER_SIZE) {
+          // e.stopPropagation();
+          // e.preventDefault();
+          // fileInputElement = e.target as HTMLInputElement;
+
+          // Check if the file type includes 'video'
+          // if (file.type.includes('video')) {
+          //   sendFileToBeCompressed(file)
+          //     .then(response => {
+          //       console.log('finish compressed video', response);
+          //     })
+          //     .catch(err => {
+          //       console.log('err', err);
+          //     });
+          // }
+          // }
+        }
       }
     });
-  }
-
-  console.log('fileChunkReceiver', fileChunkReceiver);
+  });
 })();

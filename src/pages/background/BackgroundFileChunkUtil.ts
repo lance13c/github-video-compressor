@@ -1,6 +1,6 @@
 // FileChunkSender.ts
 
-import { uint8ArrayToBase64 } from '@root/src/pages/background/binaryHelpers';
+import { base64ToUint8Array, uint8ArrayToBase64 } from '@root/src/pages/background/binaryHelpers';
 
 export type FileChunkMessage = {
   type: 'fileChunk';
@@ -10,7 +10,7 @@ export type FileChunkMessage = {
   isComplete: boolean;
 };
 
-export class FileChunkSender {
+export class BackgroundFileChunkSender {
   private readonly chunkSize: number;
 
   constructor(chunkSize: number = 1024 * 1024 * 1024) {
@@ -57,12 +57,15 @@ export class FileChunkSender {
     fileType,
   }: {
     data: Uint8Array;
-    tabId: number;
+    tabId?: number;
     fileType: string;
   }): Promise<void> {
+    console.log('hit send file');
+
     const totalChunks = Math.ceil(data.byteLength / this.chunkSize);
 
     for (let index = 0; index < totalChunks; index++) {
+      console.log('chunk sent');
       // Determine if this is the last chunk
       const isComplete = index === totalChunks - 1;
 
@@ -87,5 +90,42 @@ export class FileChunkSender {
     }
 
     console.log('Last chunk sent: ', totalChunks);
+  }
+}
+
+export class BackgroundFileChunkReceiver {
+  private fileChunks: Uint8Array[] = [];
+  private fileType: string = '';
+  private totalReceived: number = 0;
+  private listener: (blob: Blob, tabId: number) => Promise<void>;
+  private tabId: number = -1;
+
+  constructor(listener: (blob: Blob, tabId: number) => Promise<void>) {
+    this.listener = listener;
+    chrome.runtime.onMessage.addListener((message, sender) => {
+      if (message.type === 'fileChunk') {
+        this.tabId = sender.tab?.id;
+        this.handleFileChunk(message);
+      }
+    });
+  }
+
+  private handleFileChunk(message: { chunk: string; progress: number; fileType: string; isComplete: boolean }): void {
+    const chunkUint8 = base64ToUint8Array(message.chunk);
+    this.fileChunks.push(chunkUint8);
+    this.totalReceived += chunkUint8.length;
+    this.fileType = message.fileType;
+
+    if (message.isComplete) {
+      this.assembleFile();
+    }
+  }
+
+  private assembleFile(): void {
+    const completeFile = new Blob(this.fileChunks, { type: this.fileType });
+    console.log('File received and assembled', completeFile);
+    this.listener(completeFile, this.tabId);
+
+    // Additional actions to handle the file, such as saving or processing
   }
 }
