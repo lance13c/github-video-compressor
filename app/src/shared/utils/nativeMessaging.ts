@@ -20,5 +20,6 @@ export class NativeMessagingHost {
 
   private onDataReceived(data: Buffer): void {
     // Implement specific logic for received data
+    console.log('electron message:', data.toString('utf-8'))
   }
 }

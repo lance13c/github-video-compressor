@@ -12,8 +12,8 @@ const { getDevFolder } = require('./bin/utils')
 
 const author = _author?.name ?? _author
 const currentYear = new Date().getFullYear()
-const authorInKebabCase = author.replace(/\s+/g, '-')
-const appId = `com.${authorInKebabCase}.${name}`.toLowerCase()
+const authorInSnakeCase = author.replace(/\s+/g, '_')
+const appId = `com.${authorInSnakeCase}.${name}`.toLowerCase()
 console.log('appId: ' + appId)
 
 /** @type {import('electron-builder').Configuration} */

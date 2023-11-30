@@ -1,4 +1,4 @@
-import { Menu, Tray, app } from 'electron'
+import { app } from 'electron'
 
 import { NativeMessagingHost } from '../shared/utils/nativeMessaging'
 import { makeAppWithSingleInstanceLock } from './factories'
@@ -7,21 +7,32 @@ import { registerAboutWindowCreationByIPC } from './windows'
 makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
 
-  const tray = new Tray(__dirname + '/../../../../shared/assets/icon-32.png')
-  const contextMenu = Menu.buildFromTemplate([
-    { label: 'Item1', type: 'radio' },
-    { label: 'Item2', type: 'radio' },
-    { label: 'Item3', type: 'radio', checked: true },
-    { label: 'Item4', type: 'radio' },
-  ])
-  tray.setToolTip('Github Compressor')
-  tray.setContextMenu(contextMenu)
+  try {
+    // console.log('ad--------------------------f', tempIcon)
 
-  const nativeMessagingHost = new NativeMessagingHost()
+    // const icon = await nativeImage.createThumbnailFromPath(tempIcon, {
+    //   width: 22,
+    //   height: 22,
+    // })
 
-  setInterval(() => {
-    nativeMessagingHost.sendMessage({ message: 'app ping' })
-  }, 3000)
+    // const tray = new Tray('../resources/public/icon-128.png')
+    // const contextMenu = Menu.buildFromTemplate([
+    //   { label: 'Item1', type: 'radio' },
+    //   { label: 'Item2', type: 'radio' },
+    //   { label: 'Item3', type: 'radio', checked: true },
+    //   { label: 'Item4', type: 'radio' },
+    // ])
+    // tray.setToolTip('Github Compressor')
+    // tray.setContextMenu(contextMenu)
 
-  registerAboutWindowCreationByIPC()
+    const nativeMessagingHost = new NativeMessagingHost()
+
+    setInterval(() => {
+      nativeMessagingHost.sendMessage({ message: 'app ping' })
+    }, 3000)
+
+    registerAboutWindowCreationByIPC()
+  } catch (e) {
+    console.error('app error:', e)
+  }
 })

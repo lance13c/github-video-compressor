@@ -1,6 +1,6 @@
 {
   "displayName": "GithubVideoCompressor",
-  "name": "github-video-compressor",
+  "name": "github_video_compressor",
   "description": "A seamless local video compressing solution when upload videos to Github",
   "version": "0.0.1",
   "main": "./node_modules/.dev/main/index.js",
@@ -11,7 +11,7 @@
   "license": "MIT",
   "scripts": {
     "start": "electron-vite preview",
-    "dev": "cross-env NODE_ENV=development electron-vite dev --watch",
+    "dev": "cross-env NODE_ENV=development electron-vite dev",
     "compile:app": "electron-vite build",
     "compile:packageJSON": "node ./bin/modules/postbuild/index.js",
     "prebuild": "run-s compile:app compile:packageJSON",
