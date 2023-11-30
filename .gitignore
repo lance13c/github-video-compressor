@@ -1,18 +1,18 @@
 # dependencies
-/node_modules
+**/node_modules
 
 # testing
-/coverage
+**/coverage
 
 # build
-/dist
+**/dist
 
 # etc
-.DS_Store
-.env.local
-.idea
+**/.DS_Store
+**/.env.local
+**/.idea
 
 # compiled
-utils/reload/*.js
-utils/reload/injections/*.js
-public/manifest.json
+**/utils/reload/*.js
+**/utils/reload/injections/*.js
+**/public/manifest.json

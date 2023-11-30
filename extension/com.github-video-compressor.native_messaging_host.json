@@ -1,0 +1,9 @@
+{
+    "name": "com.dominic-cicilio.github-video-compressor",
+    "description": "Video Compressor for GitHub",
+    "path": "/Applications/Github Video Compressor.app",
+    "type": "stdio",
+    "allowed_origins": [
+        "chrome-extension://mbijmnlnfbjleaobjhaikfllmllahbhd/"
+    ]
+}
