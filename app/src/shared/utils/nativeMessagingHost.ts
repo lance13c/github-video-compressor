@@ -1,5 +1,6 @@
 // NativeMessagingHost.ts
 import process from 'process';
+import { Listener } from 'shared/utils/NativeFileTransceiver';
 
 const objectToStdMessage = (message: Record<string, any>): Buffer => {
   const buffer = Buffer.from(JSON.stringify(message));
@@ -11,6 +12,8 @@ const objectToStdMessage = (message: Record<string, any>): Buffer => {
 };
 
 export class NativeMessagingHost {
+  private listeners: Listener[] = [];
+
   constructor() {
     process.stdin.on('data', (data: Buffer) => {
       // Handle incoming data from the Chrome extension
@@ -29,12 +32,15 @@ export class NativeMessagingHost {
     }
   }
 
+  addListener(listener: Listener): void {
+    this.listeners.push(listener);
+  }
+
   private onDataReceived(data: Buffer): void {
-    // Implement specific logic for received data
-    // const message = `received test --- ${data.toString('utf-8')}`
-    // console.log(message)
-    // convert to uint8 array
-    // const encodedMessage = new TextEncoder().encode(message)
-    // this.sendMessage(encodedMessage)
+    this.sendMessage({ receivedMessage: data.toString('utf-8') });
+
+    this.listeners.forEach(listener => {
+      listener(data);
+    });
   }
 }

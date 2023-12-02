@@ -1,6 +1,6 @@
 import { app } from 'electron';
 
-import { NativeMessagingHost } from '../shared/utils/nativeMessaging';
+import { NativeMessagingHost } from '../shared/utils/nativeMessagingHost';
 import { makeAppWithSingleInstanceLock } from './factories';
 import { registerAboutWindowCreationByIPC } from './windows';
 
