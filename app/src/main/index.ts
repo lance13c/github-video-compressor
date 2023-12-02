@@ -1,11 +1,11 @@
-import { app } from 'electron'
+import { app } from 'electron';
 
-import { NativeMessagingHost } from '../shared/utils/nativeMessaging'
-import { makeAppWithSingleInstanceLock } from './factories'
-import { registerAboutWindowCreationByIPC } from './windows'
+import { NativeMessagingHost } from '../shared/utils/nativeMessaging';
+import { makeAppWithSingleInstanceLock } from './factories';
+import { registerAboutWindowCreationByIPC } from './windows';
 
 makeAppWithSingleInstanceLock(async () => {
-  await app.whenReady()
+  await app.whenReady();
 
   try {
     // console.log('ad--------------------------f', tempIcon)
@@ -25,14 +25,15 @@ makeAppWithSingleInstanceLock(async () => {
     // tray.setToolTip('Github Compressor')
     // tray.setContextMenu(contextMenu)
 
-    const nativeMessagingHost = new NativeMessagingHost()
+    const nativeMessagingHost = new NativeMessagingHost();
 
+    // const message = new TextEncoder().encode()
     setInterval(() => {
-      nativeMessagingHost.sendMessage({ message: 'app ping' })
-    }, 3000)
+      nativeMessagingHost.sendMessage({ text: '---ping---' });
+    }, 4000);
 
-    registerAboutWindowCreationByIPC()
+    registerAboutWindowCreationByIPC();
   } catch (e) {
-    console.error('app error:', e)
+    console.error('app error:', e);
   }
-})
+});

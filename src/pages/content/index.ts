@@ -40,7 +40,7 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
-  const { FileChunkReceiver, FileChunkSender } = await import('@root/src/pages/content/ContentFileChunkUtil');
+  const { FileChunkSender } = await import('@root/src/pages/content/ContentFileChunkUtil');
   const { GithubUploader } = await import('@root/src/pages/background/GithubUploader');
   const githubUploader = new GithubUploader();
   const sender = new FileChunkSender();
@@ -69,44 +69,44 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
     }
   };
 
-  new FileChunkReceiver(({ blob, progress }) => {
-    console.log('response', blob, progress);
+  // new FileChunkReceiver(({ blob, progress }) => {
+  //   console.log('response', blob, progress);
 
-    if (blob) {
-      const fileName = `video.${blob.type.split('/')[1]}`;
-      const file = new File([blob], fileName, { type: blob.type });
-      console.log('fileName', fileName);
+  //   if (blob) {
+  //     const fileName = `video.${blob.type.split('/')[1]}`;
+  //     const file = new File([blob], fileName, { type: blob.type });
+  //     console.log('fileName', fileName);
 
-      githubUploader
-        .startImageUpload({
-          imageName: file.name,
-          imageSize: file.size,
-          authenticity_token,
-          content_type: file.type,
-          repository_id: '720251838',
-          file,
-          imageUploadCompleteCallback: () => {
-            console.log('Upload complete');
-          },
-        })
-        .then(imageResponse => {
-          console.log('imageResponse', imageResponse);
-          if (!imageResponse) {
-            throw new Error('imageResponse is invalid');
-          }
+  //     githubUploader
+  //       .startImageUpload({
+  //         imageName: file.name,
+  //         imageSize: file.size,
+  //         authenticity_token,
+  //         content_type: file.type,
+  //         repository_id: '720251838',
+  //         file,
+  //         imageUploadCompleteCallback: () => {
+  //           console.log('Upload complete');
+  //         },
+  //       })
+  //       .then(imageResponse => {
+  //         console.log('imageResponse', imageResponse);
+  //         if (!imageResponse) {
+  //           throw new Error('imageResponse is invalid');
+  //         }
 
-          if (!textAreaElement) {
-            window.alert(
-              `The github compression extension does not know where to place the file. Please copy and paste the following link into the textarea instead.\n\nLink: [${file.name}](${imageResponse.href})`,
-            );
-            throw new Error('textAreaElement not found');
-          }
+  //         if (!textAreaElement) {
+  //           window.alert(
+  //             `The github compression extension does not know where to place the file. Please copy and paste the following link into the textarea instead.\n\nLink: [${file.name}](${imageResponse.href})`,
+  //           );
+  //           throw new Error('textAreaElement not found');
+  //         }
 
-          injectMarkdownLink(textAreaElement, file.name, imageResponse.href);
-          console.debug('success');
-        });
-    }
-  });
+  //         injectMarkdownLink(textAreaElement, file.name, imageResponse.href);
+  //         console.debug('success');
+  //       });
+  //   }
+  // });
 
   // // Function to add drag-and-drop event listeners to a textarea
   // const addDragAndDropListeners = (textarea: HTMLTextAreaElement) => {
