@@ -1,18 +1,22 @@
 import { BackgroundFileChunkReceiver } from '@root/src/pages/background/BackgroundFileChunkUtil';
 import { NativeMessagingClient } from '@root/src/pages/background/nativeMessageClient';
-import reloadOnUpdate from 'virtual:reload-on-update-in-background-script';
 
 const init = async () => {
   console.log('init');
   console.log('window.navigator.hardwareConcurrency', globalThis.navigator.hardwareConcurrency);
   const nativeMessageClient = new NativeMessagingClient('com.dominic_cicilio.github_video_compressor');
-  //  nativeMessageClient.addListener((message) => {
-  //     console.log('testAddListener message: ', message);
-  //   });
+  nativeMessageClient.addListener(message => {
+    console.log('testAddListener message: ', message);
+  });
 
-  setInterval(() => {
-    nativeMessageClient.sendMessage('ping from extension');
-  }, 5000);
+  // setTimeout(() => {
+  //   console.log('Reloading...');
+  //   chrome.runtime.reload();
+  // }, 6000);
+
+  // setInterval(() => {
+  //   nativeMessageClient.sendMessage('ping from extension');
+  // }, 2000);
 
   new BackgroundFileChunkReceiver(async blob => {
     console.log('hit background file receiver');
@@ -33,4 +37,4 @@ const init = async () => {
 };
 
 init();
-reloadOnUpdate('pages/background');
+// reloadOnUpdate('pages/background');

@@ -26,11 +26,13 @@ makeAppWithSingleInstanceLock(async () => {
     // tray.setContextMenu(contextMenu)
 
     const nativeMessagingHost = new NativeMessagingHost();
+    // Hello World
 
     // const message = new TextEncoder().encode()
+    nativeMessagingHost.sendMessage({ text: '---ping---2' });
     setInterval(() => {
-      nativeMessagingHost.sendMessage({ text: '---ping---' });
-    }, 4000);
+      nativeMessagingHost.sendMessage({ text: '---ping---1' });
+    }, 3500);
 
     registerAboutWindowCreationByIPC();
   } catch (e) {

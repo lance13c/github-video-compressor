@@ -1,18 +1,19 @@
-import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
-import { resolve, normalize, dirname } from 'path'
+import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
+import { dirname, normalize, resolve } from 'path';
 
-import injectProcessEnvPlugin from 'rollup-plugin-inject-process-env'
-import tsconfigPathsPlugin from 'vite-tsconfig-paths'
-import reactPlugin from '@vitejs/plugin-react'
+import reactPlugin from '@vitejs/plugin-react';
+import injectProcessEnvPlugin from 'rollup-plugin-inject-process-env';
+import tsconfigPathsPlugin from 'vite-tsconfig-paths';
 
-import { main, resources } from './package.json'
+import { main, resources } from './package.json';
 
-const [nodeModules, devFolder] = normalize(dirname(main)).split(/\/|\\/g)
-const devPath = [nodeModules, devFolder].join('/')
+const [nodeModules, devFolder] = normalize(dirname(main)).split(/\/|\\/g);
+const devPath = [nodeModules, devFolder].join('/');
+console.log('devPath:', devPath);
 
 const tsconfigPaths = tsconfigPathsPlugin({
   projects: [resolve('tsconfig.json')],
-})
+});
 
 export default defineConfig({
   main: {
@@ -73,4 +74,4 @@ export default defineConfig({
       },
     },
   },
-})
+});

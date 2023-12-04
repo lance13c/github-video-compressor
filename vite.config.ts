@@ -2,7 +2,6 @@ import react from '@vitejs/plugin-react';
 import path, { resolve } from 'path';
 import { defineConfig } from 'vite';
 import topLevelAwait from 'vite-plugin-top-level-await';
-import wasm from 'vite-plugin-wasm';
 import addHmr from './utils/plugins/add-hmr';
 import customDynamicImport from './utils/plugins/custom-dynamic-import';
 import makeManifest from './utils/plugins/make-manifest';
@@ -31,7 +30,6 @@ export default defineConfig({
     },
   },
   plugins: [
-    wasm(),
     topLevelAwait(),
     makeManifest({
       contentScriptCssKey: regenerateCacheInvalidationKey(),
