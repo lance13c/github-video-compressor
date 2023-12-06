@@ -1,0 +1,7 @@
+{
+  "name": "NAME",
+  "description": "DESCRIPTION",
+  "path": "PATH",
+  "type": "stdio",
+  "allowed_origins": []
+}
