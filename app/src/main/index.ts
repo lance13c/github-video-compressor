@@ -26,13 +26,19 @@ makeAppWithSingleInstanceLock(async () => {
     // tray.setContextMenu(contextMenu)
 
     const nativeMessagingHost = new NativeMessagingHost();
-    // Hello World
 
-    // const message = new TextEncoder().encode()
-    nativeMessagingHost.sendMessage({ text: '---ping---6666' });
-    setInterval(() => {
-      nativeMessagingHost.sendMessage({ text: '---ping--4-doe-ray-me-fa' });
+    nativeMessagingHost.sendMessage({ text: 'ping start' });
+    let count = 1;
+    const sendInterval = setInterval(() => {
+      nativeMessagingHost.sendMessage({ text: `v2-ping-${count}` });
+      count += 1;
     }, 3500);
+
+    process.stdin.on('end', () => {
+      console.log('stdin closed, shutting down Electron app');
+      clearInterval(sendInterval);
+      app.quit();
+    });
 
     registerAboutWindowCreationByIPC();
   } catch (e) {
