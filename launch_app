@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+
+# import json
+# import struct
+# import sys
+import atexit
+import subprocess
+import sys
+import threading
+
+
+def relay_input_to_subprocess(proc):
+    while True:
+        data = sys.stdin.buffer.read1(1024)
+        if data:
+            proc.stdin.buffer.write(data)
+            proc.stdin.buffer.flush()
+        else:
+            break
+
+def relay_output_to_stdout(proc):
+    try:
+        while True:
+            data = proc.stdout.buffer.read1(1024)
+            if data:
+                sys.stdout.buffer.write(data)
+                sys.stdout.buffer.flush()
+            else:
+                break
+    except Exception as e:
+        sys.stderr.write(f"Error relaying output to stdout: {e}\n")
+
+electron_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
+main_script_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/.dev/main/index.js"
+proc = subprocess.Popen([electron_path, main_script_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)
+
+# Start threads to relay data
+threading.Thread(target=relay_input_to_subprocess, args=(proc,), daemon=True).start()
+threading.Thread(target=relay_output_to_stdout, args=(proc,), daemon=True).start()
+
+def cleanup():
+  proc.stdin.close()
+  proc.terminate()
+  proc.wait()
+
+atexit.register(cleanup)
+proc.wait()
+
+# Write to Electron's stdin
+# proc.stdin.write("Message to Electron\n")
+# proc.stdin.flush()
+# print to standard error
+
+# Read from Electron's stdout
+# response = proc.stdout.readline()
+# print(f"Response from Electron: {response}")
+
+# Make sure to close the streams and terminate the process when done
+
+# def send_message(message):
+#     """Send a message to stdout."""
+#     encoded_message = json.dumps(message).encode('utf-8')
+#     sys.stdout.buffer.write(struct.pack('I', len(encoded_message)))
+#     sys.stdout.buffer.write(encoded_message)
+#     sys.stdout.buffer.flush()
+
+# def receive_message():
+#     """Receive a message from stdin."""
+#     raw_length = sys.stdin.buffer.read(4)
+#     if not raw_length:
+#         sys.exit(0)
+#     message_length = struct.unpack('I', raw_length)[0]
+#     message = sys.stdin.buffer.read(message_length).decode('utf-8')
+#     return json.loads(message)
+
+# def main():
+#     while True:
+#         received_message = receive_message()
+#         print(f"Received: {received_message}", file=sys.stderr)  # For debugging
+
+#         # Process the message (example)
+#         response = {"response": f"Message received: {received_message}"}
+#         send_message(response)
+
+# if __name__ == '__main__':
+#     main()
+
+
