@@ -29,9 +29,9 @@ makeAppWithSingleInstanceLock(async () => {
     // Hello World
 
     // const message = new TextEncoder().encode()
-    nativeMessagingHost.sendMessage({ text: '---ping---2' });
+    nativeMessagingHost.sendMessage({ text: '---ping---3333' });
     setInterval(() => {
-      nativeMessagingHost.sendMessage({ text: '---ping---1' });
+      nativeMessagingHost.sendMessage({ text: '---ping---doe-ray-me-fa' });
     }, 3500);
 
     registerAboutWindowCreationByIPC();

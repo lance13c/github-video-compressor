@@ -17,9 +17,10 @@ export class NativeMessagingClient {
         return false;
       });
 
-      this.port.onDisconnect.addListener(() => {
-        console.log(`${this.appName} disconnected`);
-      });
+      // this.port.onDisconnect.addListener(() => {
+      //   // console.log(`${this.appName} disconnected`);
+      //   // this.disconnect();
+      // });
     } catch (e) {
       console.error('error connecting to native app', e);
     }
