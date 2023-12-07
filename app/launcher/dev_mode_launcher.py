@@ -2,14 +2,21 @@
 
 import atexit
 import json
+import random
 import subprocess
 import sys
 import threading
 import time
-import uuid
 
 import websocket
 
+adjectives = ["red", "blue", "green", "yellow", "pink", "black", "white", "purple", "orange", "brown"]
+animals = ["lion", "tiger", "bear", "flamingo", "eagle", "dolphin", "shark", "wolf", "fox", "deer"]
+
+def generate_identifier():
+    adjective = random.choice(adjectives)
+    animal = random.choice(animals)
+    return f"{adjective} {animal}"
 
 def send_as_json_string(ws, data, client_id, message_type="data"):
     """Send data as a JSON string over WebSocket."""
@@ -34,8 +41,6 @@ def send_as_json_string(ws, data, client_id, message_type="data"):
     })
     ws.send(message)
 
-client_id = str(uuid.uuid4())
-
 # Dev Server Websocket Connection
 def on_message(ws, message):
     # Handle incoming WebSocket messages (optional)
@@ -49,6 +54,10 @@ def on_close(ws, close_status_code, close_msg):
 
 def on_open(ws):
     sys.stderr.write("WebSocket connection opened\n")
+
+
+# Generate client id
+client_id = generate_identifier()
 
 # WebSocket setup
 ws_url = "ws://localhost:3333"
