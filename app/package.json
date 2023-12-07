@@ -11,8 +11,8 @@
   "license": "MIT",
   "scripts": {
     "start": "electron-vite preview",
-    "dev": "cross-env NODE_ENV=development electron-vite dev",
-    "dev:watch": "nodemon --watch src",
+    "dev": "npx ts-node ./dev_server.ts",
+    "dev:launcher": "./launcher/dev_mode_launcher.py",
     "build:launcher": "pyinstaller --distpath=./launcher/dist ./launcher/dev_mode_launcher.py",
     "compile:app": "electron-vite build",
     "compile:app:watch": "electron-vite build",
