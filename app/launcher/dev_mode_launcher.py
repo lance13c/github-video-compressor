@@ -1,47 +1,88 @@
 #!/usr/bin/env python3
 
-# import json
-# import struct
-# import sys
 import atexit
+import json
 import subprocess
 import sys
 import threading
 
+import websocket
 
-def relay_input_to_subprocess(proc):
+
+def send_as_json_string(ws, data):
+    """Send data as a JSON string over WebSocket."""
+    message = json.dumps({'data': data.decode('utf-8', errors='ignore')})
+    ws.send(message)
+
+# Dev Server Websocket Connection
+def on_message(ws, message):
+    # Handle incoming WebSocket messages (optional)
+    pass
+
+def on_error(ws, error):
+    sys.stderr.write(f"WebSocket error: {error}\n")
+
+def on_close(ws, close_status_code, close_msg):
+    sys.stderr.write("WebSocket connection closed\n")
+
+def on_open(ws):
+    sys.stderr.write("WebSocket connection opened\n")
+
+# WebSocket setup
+ws_url = "ws://localhost:3333"
+ws = websocket.WebSocketApp(ws_url,
+  on_open=on_open,
+  on_message=on_message,
+  on_error=on_error,
+  on_close=on_close)
+  
+def relay_input_to_subprocess(proc, ws):
     while True:
         data = sys.stdin.buffer.read1(1024)
         if data:
             proc.stdin.buffer.write(data)
             proc.stdin.buffer.flush()
+            send_as_json_string(ws, data)
         else:
             break
 
-def relay_output_to_stdout(proc):
+def relay_output_to_stdout(proc, ws):
     try:
         while True:
             data = proc.stdout.buffer.read1(1024)
             if data:
                 sys.stdout.buffer.write(data)
                 sys.stdout.buffer.flush()
+                send_as_json_string(ws, data)
             else:
                 break
     except Exception as e:
         sys.stderr.write(f"Error relaying output to stdout: {e}\n")
 
+
+# Start WebSocket connection in a separate thread
+ws_thread = threading.Thread(target=ws.run_forever)
+ws_thread.start()
+
+# Dev Server Path
 electron_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
 main_script_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/.dev/main/index.js"
+# Start Electron subprocess
 proc = subprocess.Popen([electron_path, main_script_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)
 
 # Start threads to relay data
-threading.Thread(target=relay_input_to_subprocess, args=(proc,), daemon=True).start()
-threading.Thread(target=relay_output_to_stdout, args=(proc,), daemon=True).start()
+threading.Thread(target=relay_input_to_subprocess, args=(proc,ws), daemon=True).start()
+threading.Thread(target=relay_output_to_stdout, args=(proc,ws), daemon=True).start()
+
+
 
 def cleanup():
   proc.stdin.close()
   proc.terminate()
   proc.wait()
+  if ws:
+    ws.close()
+
 
 atexit.register(cleanup)
 proc.wait()
