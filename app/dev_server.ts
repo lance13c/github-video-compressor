@@ -21,17 +21,13 @@ wss.on('connection', ws => {
     let clientId: null | string = null;
 
     ws.on('message', (message: string) => {
-      try {
-          const parsedMessage = JSON.parse(message);
-          if (parsedMessage.type === 'start') {
-              clientId = parsedMessage.client_id;
-              console.log(`Client connected with ID: ${clientId}`);
-          } else if (parsedMessage.type === 'data') {
-              console.log(`Received from ${clientId}:`, parsedMessage.data);
-          }
-      } catch (e) {
-          console.error('Error parsing message:', e);
-      }
+        try {
+            const parsedMessage = JSON.parse(message);
+            const logPrefix = `[${parsedMessage.client_id} - ${parsedMessage.source.toUpperCase()}]`;
+            console.log(`${logPrefix} Message:`, parsedMessage.data);
+        } catch (e) {
+            console.error('Error parsing message:', e);
+        }
     });
 
     ws.on('close', () => {

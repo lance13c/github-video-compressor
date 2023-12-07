@@ -27,12 +27,15 @@ export class NativeMessagingClient {
   }
 
   sendMessage(message: unknown): void {
-    try {
-      this.port.postMessage(message);
-    } catch (e) {
-      console.error('error sending message', e);
-    }
+    const messageString = JSON.stringify(message);
+    const messageLength = new TextEncoder().encode(messageString).length;
+    const buffer = new ArrayBuffer(4 + messageLength);
+    new DataView(buffer).setUint32(0, messageLength, true); // true for little-endian
+    new Uint8Array(buffer, 4).set(new TextEncoder().encode(messageString));
+
+    this.port.postMessage(buffer);
   }
+  
 
   disconnect(): void {
     this.port.disconnect();

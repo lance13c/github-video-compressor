@@ -15,7 +15,6 @@
     "dev:launcher": "./launcher/dev_mode_launcher.py",
     "build:launcher": "pyinstaller --distpath=./launcher/dist ./launcher/dev_mode_launcher.py",
     "compile:app": "electron-vite build",
-    "compile:app:watch": "electron-vite build",
     "compile:packageJSON": "node ./bin/modules/postbuild/index.js",
     "prebuild": "run-s compile:app compile:packageJSON",
     "build": "./node_modules/.bin/electron-builder",

@@ -27,10 +27,10 @@ makeAppWithSingleInstanceLock(async () => {
 
     const nativeMessagingHost = new NativeMessagingHost();
 
-    nativeMessagingHost.sendMessage({ text: 'ping start' });
+    nativeMessagingHost.sendMessage({ text: 'ping start 456' });
     let count = 1;
     const sendInterval = setInterval(() => {
-      nativeMessagingHost.sendMessage({ text: `v2-ping-${count}` });
+      nativeMessagingHost.sendMessage({ text: `v3-ping-${count}` });
       count += 1;
     }, 3500);
 

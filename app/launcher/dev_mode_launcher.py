@@ -18,24 +18,27 @@ def generate_identifier():
     animal = random.choice(animals)
     return f"{color} {animal}"
 
-def send_as_json_string(ws, data, client_id, message_type="data"):
+def read_native_message(stdin):
+    """Read a message with length prefix from stdin."""
+    text_length_bytes = stdin.read(4)
+    if not text_length_bytes:
+        return None
+    text_length = struct.unpack('I', text_length_bytes)[0]
+    return stdin.read(text_length)
+
+def send_as_json_string(ws, data, client_id, source, message_type="data"):
     """Send data as a JSON string over WebSocket."""
-    # Convert data to JSON string if it's already a string
-    if isinstance(data, str):
-        try:
-            # Try parsing string data as JSON
-            json_data = json.loads(data)
-            data = json.dumps(json_data)
-        except json.JSONDecodeError:
-            # If it's not JSON, leave it as a plain string
-            pass
-    elif isinstance(data, bytes):
-        # Decode bytes to UTF-8 string
+    try:
+        # Attempt to parse bytes as JSON
+        json_data = json.loads(data.decode('utf-8', errors='ignore'))
+        data = json.dumps(json_data)
+    except json.JSONDecodeError:
+        # If it's not JSON, send it as a plain string
         data = data.decode('utf-8', errors='ignore')
-    
-    # Construct and send message
+
     message = json.dumps({
         'type': message_type,
+        'source': source,  # Indicate the source of the message
         'client_id': client_id,
         'data': data
     })
@@ -69,11 +72,14 @@ ws = websocket.WebSocketApp(ws_url,
   
 def relay_input_to_subprocess(proc, ws):
     while True:
-        data = sys.stdin.buffer.read1(1024)
+        data = read_native_message(sys.stdin.buffer)
         if data:
+            # Forward raw data to the Electron app
             proc.stdin.buffer.write(data)
             proc.stdin.buffer.flush()
-            send_as_json_string(ws, data, client_id)
+
+            # Send processed data to WebSocket, indicating it's from the extension
+            send_as_json_string(ws, data, client_id, source="extension")
         else:
             break
 
@@ -84,7 +90,7 @@ def relay_output_to_stdout(proc, ws):
             if data:
                 sys.stdout.buffer.write(data)
                 sys.stdout.buffer.flush()
-                send_as_json_string(ws, data, client_id)
+                send_as_json_string(ws, data, client_id, source="desktop-app")
             else:
                 break
     except Exception as e:
