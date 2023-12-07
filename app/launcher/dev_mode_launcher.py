@@ -5,14 +5,36 @@ import json
 import subprocess
 import sys
 import threading
+import time
+import uuid
 
 import websocket
 
 
-def send_as_json_string(ws, data):
+def send_as_json_string(ws, data, client_id, message_type="data"):
     """Send data as a JSON string over WebSocket."""
-    message = json.dumps({'data': data.decode('utf-8', errors='ignore')})
+    # Convert data to JSON string if it's already a string
+    if isinstance(data, str):
+        try:
+            # Try parsing string data as JSON
+            json_data = json.loads(data)
+            data = json.dumps(json_data)
+        except json.JSONDecodeError:
+            # If it's not JSON, leave it as a plain string
+            pass
+    elif isinstance(data, bytes):
+        # Decode bytes to UTF-8 string
+        data = data.decode('utf-8', errors='ignore')
+    
+    # Construct and send message
+    message = json.dumps({
+        'type': message_type,
+        'client_id': client_id,
+        'data': data
+    })
     ws.send(message)
+
+client_id = str(uuid.uuid4())
 
 # Dev Server Websocket Connection
 def on_message(ws, message):
@@ -42,7 +64,7 @@ def relay_input_to_subprocess(proc, ws):
         if data:
             proc.stdin.buffer.write(data)
             proc.stdin.buffer.flush()
-            send_as_json_string(ws, data)
+            send_as_json_string(ws, data, client_id)
         else:
             break
 
@@ -53,7 +75,7 @@ def relay_output_to_stdout(proc, ws):
             if data:
                 sys.stdout.buffer.write(data)
                 sys.stdout.buffer.flush()
-                send_as_json_string(ws, data)
+                send_as_json_string(ws, data, client_id)
             else:
                 break
     except Exception as e:
@@ -74,7 +96,9 @@ proc = subprocess.Popen([electron_path, main_script_path], stdin=subprocess.PIPE
 threading.Thread(target=relay_input_to_subprocess, args=(proc,ws), daemon=True).start()
 threading.Thread(target=relay_output_to_stdout, args=(proc,ws), daemon=True).start()
 
-
+time.sleep(1)
+## Initialize, send start message
+send_as_json_string(ws, "Client started", client_id, message_type="start")
 
 def cleanup():
   proc.stdin.close()
@@ -82,7 +106,6 @@ def cleanup():
   proc.wait()
   if ws:
     ws.close()
-
 
 atexit.register(cleanup)
 proc.wait()
