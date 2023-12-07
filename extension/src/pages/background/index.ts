@@ -12,6 +12,8 @@ const init = async () => {
     //   console.log('testAddListener message: ', message);
     // });
 
+    nativeMessageClient.sendMessage({ test: 'test123' });
+
     setInterval(() => {
       nativeMessageClient.sendMessage({ test: 'message from extension' });
     }, 3000);

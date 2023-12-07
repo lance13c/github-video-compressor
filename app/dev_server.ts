@@ -23,7 +23,7 @@ wss.on('connection', ws => {
     ws.on('message', (message: string) => {
         try {
             const parsedMessage = JSON.parse(message);
-            const logPrefix = `[${parsedMessage.client_id} - ${parsedMessage.source.toUpperCase()}]`;
+            const logPrefix = `[${parsedMessage.client_id} - ${parsedMessage.source.toUpperCase()} - ${parsedMessage.type}]`;
             console.log(`${logPrefix} Message:`, parsedMessage.data);
         } catch (e) {
             console.error('Error parsing message:', e);
