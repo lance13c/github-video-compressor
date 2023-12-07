@@ -113,7 +113,7 @@ def on_open(ws):
     # Start threads to relay data
     threading.Thread(target=relay_input_to_subprocess, args=(proc,ws), daemon=True).start()
     threading.Thread(target=relay_output_to_stdout, args=(proc,ws), daemon=True).start()
-    threading.Thread(target=relay_output_to_stderr, args=(proc, ws), daemon=True).start()
+    threading.Thread(target=relay_output_to_stderr, args=(proc,ws), daemon=True).start()
 
     def cleanup():
       proc.stdin.close()
@@ -147,7 +147,7 @@ def relay_input_to_subprocess(proc, ws):
             send_as_json_string(ws, data, client_id, source="extension")
         else:
             send_debug_message(ws, "No data received.", client_id)
-            time.sleep(0.1)  # Prevent busy waiting
+            time.sleep(0.1)
 
 def relay_output_to_stdout(proc, ws):
     try:
@@ -158,7 +158,7 @@ def relay_output_to_stdout(proc, ws):
                 sys.stdout.buffer.flush()
                 send_as_json_string(ws, data, client_id, source="desktop-app")
             else:
-                break
+                time.sleep(0.1)
     except Exception as e:
         sys.stderr.write(f"Error relaying output to stdout: {e}\n")
 
@@ -172,7 +172,7 @@ def relay_output_to_stderr(proc, ws):
                 # Send this data over WebSocket
                 send_as_json_string(ws, data, client_id, source="desktop-app-stderr")
             else:
-                break
+                time.sleep(0.1)
     except Exception as e:
         sys.stderr.write(f"Error relaying output to stderr: {e}\n")
 
