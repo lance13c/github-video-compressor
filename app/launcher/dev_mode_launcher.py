@@ -10,13 +10,13 @@ import time
 
 import websocket
 
-adjectives = ["red", "blue", "green", "yellow", "pink", "black", "white", "purple", "orange", "brown"]
+colors = ["red", "blue", "green", "yellow", "pink", "black", "white", "purple", "orange", "brown"]
 animals = ["lion", "tiger", "bear", "flamingo", "eagle", "dolphin", "shark", "wolf", "fox", "deer"]
 
 def generate_identifier():
-    adjective = random.choice(adjectives)
+    color = random.choice(colors)
     animal = random.choice(animals)
-    return f"{adjective} {animal}"
+    return f"{color} {animal}"
 
 def send_as_json_string(ws, data, client_id, message_type="data"):
     """Send data as a JSON string over WebSocket."""
