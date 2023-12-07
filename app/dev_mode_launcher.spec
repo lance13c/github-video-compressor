@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['launcher/dev_mode_launcher'],
+    ['launcher/dev_mode_launcher.py'],
     pathex=[],
     binaries=[],
     datas=[],
