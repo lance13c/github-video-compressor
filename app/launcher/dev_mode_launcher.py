@@ -3,6 +3,7 @@
 import atexit
 import json
 import random
+import struct
 import subprocess
 import sys
 import threading
@@ -31,36 +32,54 @@ def generate_identifier():
     animal = random.choice(animals)
     return f"{color} {animal}"
 
+# def read_native_message(stdin, ws, client_id):
+#     """Read a message with length prefix from stdin."""
+#     try:
+#         text_length_bytes = stdin.read(4)
+#         if not text_length_bytes:
+#             send_debug_message(ws, "No data received in length bytes", client_id)
+#             return None
+#         text_length = struct.unpack('I', text_length_bytes)[0]
+#         data = stdin.read(text_length)
+#         if not data:
+#             send_debug_message(ws, "No data received in message body", client_id)
+#             return None
+
+#         # Debug: Log the JSON part of the data
+#         send_debug_message(ws, f"JSON part of the data: {data}", client_id)
+#         return data  # Return only the JSON part
+#     except Exception as e:
+#         send_debug_message(ws, f"Error in read_native_message: {str(e)}", client_id)
+#         return None
+
 def read_native_message(stdin, ws, client_id):
     """Read a message with length prefix from stdin."""
     try:
         text_length_bytes = stdin.read(4)
         if not text_length_bytes:
-            send_debug_message(ws, "No data received in length bytes", client_id)
             return None
         text_length = struct.unpack('I', text_length_bytes)[0]
-        data = stdin.read(text_length)
-        if not data:
-            send_debug_message(ws, "No data received in message body", client_id)
+        message = stdin.read(text_length)
+        if not message:
             return None
-        return data
-    except Exception as e:
-        send_debug_message(ws, f"Error in read_native_message: {str(e)}", client_id)
-        return None
 
+        # Send the raw JSON message for debugging
+        return message
+    except Exception as e:
+        send_debug_message(ws, f"Error: {str(e)}", client_id)
+        return None
+        
 def send_as_json_string(ws, data, client_id, source, message_type="data"):
     """Send data as a JSON string over WebSocket."""
     if isinstance(data, bytes):
-        # Only decode if data is a bytes object
         try:
             # Attempt to parse bytes as JSON
-            json_data = json.loads(data.decode('utf-8', errors='ignore'))
+            json_data = json.loads(data.decode('utf-8'))
             data = json.dumps(json_data)
-        except json.JSONDecodeError:
-            # If it's not JSON, send it as a plain string
-            data = data.decode('utf-8', errors='ignore')
-    # No need to decode if data is already a str
-
+        except json.JSONDecodeError as e:
+            send_debug_message(ws, f"JSONDecodeError: {str(e)}", client_id)
+            data = data.decode('utf-8')
+    
     message = json.dumps({
         'type': message_type,
         'source': source,
@@ -121,10 +140,8 @@ ws = websocket.WebSocketApp(ws_url,
   
 def relay_input_to_subprocess(proc, ws):
     while True:
-        send_debug_message(ws, "Checking for data from extension...", client_id)
         data = read_native_message(sys.stdin.buffer, ws, client_id)
         if data:
-            send_debug_message(ws, f"Received data: {data}", client_id)
             proc.stdin.buffer.write(data)
             proc.stdin.buffer.flush()
             send_as_json_string(ws, data, client_id, source="extension")
