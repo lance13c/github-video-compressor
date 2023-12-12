@@ -27,12 +27,6 @@ export class NativeMessagingClient {
   }
 
   sendMessage(message: Record<string, unknown>): void {
-    // const messageString = JSON.stringify(message);
-    // const messageLength = new TextEncoder().encode(messageString).length;
-    // const buffer = new ArrayBuffer(4 + messageLength);
-    // new DataView(buffer).setUint32(0, messageLength, true); // true for little-endian
-    // new Uint8Array(buffer, 4).set(new TextEncoder().encode(messageString));
-
     const messageString = JSON.stringify(message);
     const messageBuffer = new TextEncoder().encode(messageString);
     const lengthBuffer = new ArrayBuffer(4);
@@ -41,7 +35,7 @@ export class NativeMessagingClient {
     const combinedBuffer = new Uint8Array(lengthBuffer.byteLength + messageBuffer.byteLength);
     combinedBuffer.set(new Uint8Array(lengthBuffer), 0);
     combinedBuffer.set(messageBuffer, lengthBuffer.byteLength);
-
+    console.log('hit send message');
     this.port.postMessage(combinedBuffer);
   }
   

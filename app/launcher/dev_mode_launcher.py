@@ -2,6 +2,7 @@
 
 import atexit
 import json
+import queue
 import random
 import struct
 import subprocess
@@ -10,6 +11,9 @@ import threading
 import time
 
 import websocket
+
+input_queue = queue.Queue()
+output_queue = queue.Queue()
 
 colors = ["red", "blue", "green", "yellow", "pink", "black", "white", "purple", "orange", "brown"]
 animals = ["lion", "tiger", "bear", "flamingo", "eagle", "dolphin", "shark", "wolf", "fox", "deer"]
@@ -31,26 +35,6 @@ def generate_identifier():
     color = random.choice(colors)
     animal = random.choice(animals)
     return f"{color} {animal}"
-
-# def read_native_message(stdin, ws, client_id):
-#     """Read a message with length prefix from stdin."""
-#     try:
-#         text_length_bytes = stdin.read(4)
-#         if not text_length_bytes:
-#             send_debug_message(ws, "No data received in length bytes", client_id)
-#             return None
-#         text_length = struct.unpack('I', text_length_bytes)[0]
-#         data = stdin.read(text_length)
-#         if not data:
-#             send_debug_message(ws, "No data received in message body", client_id)
-#             return None
-
-#         # Debug: Log the JSON part of the data
-#         send_debug_message(ws, f"JSON part of the data: {data}", client_id)
-#         return data  # Return only the JSON part
-#     except Exception as e:
-#         send_debug_message(ws, f"Error in read_native_message: {str(e)}", client_id)
-#         return None
 
 def read_native_message(stdin, ws, client_id):
     """Read a message with length prefix from stdin."""
@@ -88,6 +72,28 @@ def send_as_json_string(ws, data, client_id, source, message_type="data"):
     })
     ws.send(message)
 
+def read_from_extension(input_queue):
+    while True:
+        data = read_native_message()  # Implement this function
+        input_queue.put(data)
+
+def write_to_electron(output_queue, proc):
+    while True:
+        data = output_queue.get()  # Blocks until data is available
+        proc.stdin.write(data)
+        proc.stdin.flush()
+
+def read_from_electron(proc, output_queue):
+    while True:
+        data = proc.stdout.readline()
+        output_queue.put(data)
+
+# Proxy Heartbeat
+def run_is_alive(ws, client_id):
+    while True:
+        send_as_json_string(ws, "proxy is alive", client_id, source="proxy", message_type="is_alive")
+        time.sleep(3)
+
 # Dev Server Websocket Connection
 def on_message(ws, message):
     # Handle incoming WebSocket messages (optional)
@@ -111,9 +117,11 @@ def on_open(ws):
     proc = subprocess.Popen([electron_path, main_script_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
 
     # Start threads to relay data
+    threading.Thread(target=run_is_alive, args=(ws, client_id), daemon=True).start()
     threading.Thread(target=relay_input_to_subprocess, args=(proc,ws), daemon=True).start()
     threading.Thread(target=relay_output_to_stdout, args=(proc,ws), daemon=True).start()
     threading.Thread(target=relay_output_to_stderr, args=(proc,ws), daemon=True).start()
+    
 
     def cleanup():
       proc.stdin.close()
@@ -122,8 +130,8 @@ def on_open(ws):
       if ws:
         ws.close()
 
-      atexit.register(cleanup)
-      proc.wait()
+    atexit.register(cleanup)
+    proc.wait()
 
 
 
@@ -142,6 +150,7 @@ def relay_input_to_subprocess(proc, ws):
     while True:
         data = read_native_message(sys.stdin.buffer, ws, client_id)
         if data:
+            send_debug_message(ws, f"Received data: {data}", client_id) 
             proc.stdin.buffer.write(data)
             proc.stdin.buffer.flush()
             send_as_json_string(ws, data, client_id, source="extension")
@@ -158,7 +167,7 @@ def relay_output_to_stdout(proc, ws):
                 sys.stdout.buffer.flush()
                 send_as_json_string(ws, data, client_id, source="desktop-app")
             else:
-                time.sleep(0.1)
+                break
     except Exception as e:
         sys.stderr.write(f"Error relaying output to stdout: {e}\n")
 
@@ -172,10 +181,12 @@ def relay_output_to_stderr(proc, ws):
                 # Send this data over WebSocket
                 send_as_json_string(ws, data, client_id, source="desktop-app-stderr")
             else:
-                time.sleep(0.1)
+                break
     except Exception as e:
         sys.stderr.write(f"Error relaying output to stderr: {e}\n")
 
 # Start WebSocket connection in a separate thread
 ws_thread = threading.Thread(target=ws.run_forever)
 ws_thread.start()
+
+

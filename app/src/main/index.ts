@@ -27,16 +27,16 @@ makeAppWithSingleInstanceLock(async () => {
 
     const nativeMessagingHost = new NativeMessagingHost();
 
-    nativeMessagingHost.sendMessage({ text: 'ping start 456' });
+    // nativeMessagingHost.sendMessage({ text: 'ping start 456' });
     let count = 1;
-    const sendInterval = setInterval(() => {
-      nativeMessagingHost.sendMessage({ text: `v3-ping-${count}` });
-      count += 1;
-    }, 3500);
+    // const sendInterval = setInterval(() => {
+    //   nativeMessagingHost.sendMessage({ text: `v3-ping-${count}` });
+    //   count += 1;
+    // }, 6000);
 
     process.stdin.on('end', () => {
       console.log('stdin closed, shutting down Electron app');
-      clearInterval(sendInterval);
+      // clearInterval(sendInterval);
       app.quit();
     });
 
