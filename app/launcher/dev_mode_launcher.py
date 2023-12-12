@@ -20,38 +20,46 @@ animals = ["lion", "tiger", "bear", "flamingo", "eagle", "dolphin", "shark", "wo
 
 # Debug
 def send_debug_message(ws, debug_message, client_id):
-    if ws.sock and ws.sock.connected:
-        message = json.dumps({
-            'type': 'debug',
-            'client_id': client_id,
-            'source': 'proxy',
-            'data': debug_message
-        })
-        ws.send(message)
-    else:
-        print("WebSocket is not connected.")
+    try:
+        if ws.sock and ws.sock.connected:
+            message = json.dumps({
+                'type': 'debug',
+                'client_id': client_id,
+                'source': 'proxy',
+                'data': debug_message
+            })
+            ws.send(message)
+        else:
+            print("WebSocket is not connected.")
+    except Exception as e:
+        print(f"WebSocket send error: {e}")
 
 def generate_identifier():
     color = random.choice(colors)
     animal = random.choice(animals)
     return f"{color} {animal}"
 
-def read_native_message(stdin, ws, client_id):
-    """Read a message with length prefix from stdin."""
+def read_native_message(stdin, client_id):
     try:
         text_length_bytes = stdin.read(4)
         if not text_length_bytes:
-            return None
+            return None, None
         text_length = struct.unpack('I', text_length_bytes)[0]
         message = stdin.read(text_length)
         if not message:
-            return None
+            return None, None
 
-        # Send the raw JSON message for debugging
-        return message
+        # Decode the message and parse as JSON
+        try:
+            decoded_message = message.decode('utf-8')
+            json_message = json.loads(decoded_message)
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            decoded_message = message.decode('utf-8', errors='ignore')
+            json_message = decoded_message  # Send the decoded string as is
+
+        return message, json_message
     except Exception as e:
-        send_debug_message(ws, f"Error: {str(e)}", client_id)
-        return None
+        return None, f"Error: {str(e)}"
         
 def send_as_json_string(ws, data, client_id, source, message_type="data"):
     """Send data as a JSON string over WebSocket."""
@@ -72,21 +80,21 @@ def send_as_json_string(ws, data, client_id, source, message_type="data"):
     })
     ws.send(message)
 
-def read_from_extension(input_queue):
-    while True:
-        data = read_native_message()  # Implement this function
-        input_queue.put(data)
+# def read_from_extension(input_queue):
+#     while True:
+#         data = read_native_message()  # Implement this function
+#         input_queue.put(data)
 
-def write_to_electron(output_queue, proc):
-    while True:
-        data = output_queue.get()  # Blocks until data is available
-        proc.stdin.write(data)
-        proc.stdin.flush()
+# def write_to_electron(output_queue, proc):
+#     while True:
+#         data = output_queue.get()  # Blocks until data is available
+#         proc.stdin.write(data)
+#         proc.stdin.flush()
 
-def read_from_electron(proc, output_queue):
-    while True:
-        data = proc.stdout.readline()
-        output_queue.put(data)
+# def read_from_electron(proc, output_queue):
+#     while True:
+#         data = proc.stdout.readline()
+#         output_queue.put(data)
 
 # Proxy Heartbeat
 def run_is_alive(ws, client_id):
@@ -147,18 +155,39 @@ ws = websocket.WebSocketApp(ws_url,
   on_close=on_close)
   
 def relay_input_to_subprocess(proc, ws):
+    send_debug_message(ws, "Input thread started", client_id)
     while True:
-        data = read_native_message(sys.stdin.buffer, ws, client_id)
-        if data:
-            send_debug_message(ws, f"Received data: {data}", client_id) 
-            proc.stdin.buffer.write(data)
-            proc.stdin.buffer.flush()
-            send_as_json_string(ws, data, client_id, source="extension")
+        raw_data, parsed_data = read_native_message(sys.stdin.buffer, client_id)
+        if raw_data:
+            if proc.poll() is not None:
+                send_debug_message(ws, "Subprocess has terminated.", client_id)
+                break  # Exit loop if subprocess is not running
+
+            try:
+                # Convert raw_data to JSON string
+                json_string = json.dumps(parsed_data) if isinstance(parsed_data, dict) else raw_data.decode('utf-8')
+                
+                # Prepare the header and the message for the subprocess
+                encoded_message = json_string.encode('utf-8')
+                header = struct.pack('I', len(encoded_message))
+                final_message = header + encoded_message
+
+                # Send the formatted message to subprocess
+                proc.stdin.buffer.write(final_message)
+                proc.stdin.buffer.flush()
+
+                # Send parsed data over WebSocket
+                send_as_json_string(ws, parsed_data, client_id, source="extension")
+                
+            except Exception as e:
+                send_debug_message(ws, f"Error in sending data to subprocess: {str(e)}", client_id)
         else:
             send_debug_message(ws, "No data received.", client_id)
             time.sleep(0.1)
 
+
 def relay_output_to_stdout(proc, ws):
+    send_debug_message(ws, "Output thread started", client_id)
     try:
         while True:
             data = proc.stdout.buffer.read1(1024)
