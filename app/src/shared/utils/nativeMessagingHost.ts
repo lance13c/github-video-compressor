@@ -37,10 +37,11 @@ export class NativeMessagingHost {
   }
 
   private onDataReceived(data: Buffer): void {
-    this.sendMessage({ receivedMessage: data.toString('utf-8') });
+    // this.sendMessage({ receivedMessage: data.toString('utf-8') });
+    // console.log(data);
 
-    this.listeners.forEach(listener => {
-      listener(data);
-    });
+    // this.listeners.forEach(listener => {
+    //   listener(data);
+    // });
   }
 }

@@ -122,7 +122,11 @@ def on_open(ws):
     electron_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
     main_script_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/.dev/main/index.js"
     # Start Electron subprocess
-    proc = subprocess.Popen([electron_path, main_script_path], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+    proc = subprocess.Popen([electron_path, main_script_path],
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        bufsize=0)
 
     # Start threads to relay data
     threading.Thread(target=run_is_alive, args=(ws, client_id), daemon=True).start()
@@ -155,30 +159,21 @@ ws = websocket.WebSocketApp(ws_url,
   on_close=on_close)
   
 def relay_input_to_subprocess(proc, ws):
-    send_debug_message(ws, "Input thread started", client_id)
     while True:
         raw_data, parsed_data = read_native_message(sys.stdin.buffer, client_id)
         if raw_data:
             if proc.poll() is not None:
                 send_debug_message(ws, "Subprocess has terminated.", client_id)
-                break  # Exit loop if subprocess is not running
+                break
 
             try:
-                # Convert raw_data to JSON string
-                json_string = json.dumps(parsed_data) if isinstance(parsed_data, dict) else raw_data.decode('utf-8')
-                
-                # Prepare the header and the message for the subprocess
-                encoded_message = json_string.encode('utf-8')
-                header = struct.pack('I', len(encoded_message))
-                final_message = header + encoded_message
-
-                # Send the formatted message to subprocess
-                proc.stdin.buffer.write(final_message)
-                proc.stdin.buffer.flush()
+                # Send the raw data directly to subprocess
+                proc.stdin.write(raw_data)
+                proc.stdin.flush()
 
                 # Send parsed data over WebSocket
-                send_as_json_string(ws, parsed_data, client_id, source="extension")
-                
+                if parsed_data:
+                    send_as_json_string(ws, parsed_data, client_id, source="extension")
             except Exception as e:
                 send_debug_message(ws, f"Error in sending data to subprocess: {str(e)}", client_id)
         else:
