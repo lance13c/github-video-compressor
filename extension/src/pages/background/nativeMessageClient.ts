@@ -12,7 +12,7 @@ export class NativeMessagingClient {
       this.port = chrome.runtime.connectNative(this.appName);
 
       this.port.onMessage.addListener(message => {
-        console.log('constructor message', message);
+        console.log('on message:', message);
 
         return false;
       });

@@ -40,8 +40,8 @@ export class NativeMessagingHost {
     // this.sendMessage({ receivedMessage: data.toString('utf-8') });
     // console.log(data);
 
-    // this.listeners.forEach(listener => {
-    //   listener(data);
-    // });
+    this.listeners.forEach(listener => {
+      listener(data);
+    });
   }
 }

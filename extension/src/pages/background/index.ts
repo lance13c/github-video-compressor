@@ -12,12 +12,12 @@ const init = async () => {
     //   console.log('testAddListener message: ', message);
     // });
 
-    nativeMessageClient.sendMessage({ test: 'test123' });
+    // nativeMessageClient.sendMessage({ test: 'test123' });
     // nativeMessageClient.sendMessage({ test: 'test456' });
 
-    setInterval(() => {
-      nativeMessageClient.sendMessage({ test: 'message from extension' });
-    }, 1000);
+    // setInterval(() => {
+    //   nativeMessageClient.sendMessage({ test: 'message from extension' });
+    // }, 2000);
     
 
     new BackgroundFileChunkReceiver(async blob => {

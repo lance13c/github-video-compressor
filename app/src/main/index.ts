@@ -47,22 +47,28 @@ makeAppWithSingleInstanceLock(async () => {
     // console.log('ad--------------------------f', tempIcon)
     const nativeMessagingHost = new NativeMessagingHost();
 
-    process.stdin.on('data', (data) => {
-      sendDebugMessage('stdinData', data.toString());
-      // Rest of your onDataReceived logic
+    nativeMessagingHost.addListener((data) => {
+      sendDebugMessage('nativeMessagingHostData', data.toString());
     });
+
+    // process.stdin.on('data', (data) => {
+    //   sendDebugMessage('stdinData', data.toString());
+    //   // Rest of your onDataReceived logic
+    // });
 
 
     // nativeMessagingHost.sendMessage({ text: 'ping start 456' });
     let count = 1;
-    // const sendInterval = setInterval(() => {
-    //   nativeMessagingHost.sendMessage({ text: `v3-ping-${count}` });
-    //   count += 1;
-    // }, 6000);
+    const sendInterval = setInterval(() => {
+      nativeMessagingHost.sendMessage({ text: `v3-ping-${count}` });
+      console.log({ text: `console-${count}` })
+      count += 1;
+    }, 4000);
 
     process.stdin.on('end', () => {
       console.log('stdin closed, shutting down Electron app');
       sendDebugMessage('info', 'stdin closed, shutting down Electron app');
+      clearInterval(sendInterval);
       app.quit();
     });
 
