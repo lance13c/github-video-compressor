@@ -12,12 +12,16 @@ const init = async () => {
     //   console.log('testAddListener message: ', message);
     // });
 
-    // nativeMessageClient.sendMessage({ test: 'test123' });
+    // nativeMessageClient.sendMessage({ test: '1' });
+    // nativeMessageClient.sendMessage({ test: '1' });
+    // nativeMessageClient.sendMessage({ test: '1' });
+    // nativeMessageClient.sendMessage({ test: '1' });
     // nativeMessageClient.sendMessage({ test: 'test456' });
-
-    // setInterval(() => {
-    //   nativeMessageClient.sendMessage({ test: 'message from extension' });
-    // }, 2000);
+    let count = 0;
+    setInterval(() => {
+      nativeMessageClient.sendMessage({ test: `message from extension ${count}` });
+      count += 1;
+    }, 4000);
     
 
     new BackgroundFileChunkReceiver(async blob => {

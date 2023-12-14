@@ -58,7 +58,8 @@ def read_native_message(dataSource, client_id):
             decoded_message = message.decode('utf-8', errors='ignore')
             json_message = decoded_message  # Send the decoded string as is
 
-        return message, json_message
+        raw_message = text_length_bytes + message
+        return raw_message, json_message
     except Exception as e:
         return None, f"Error: {str(e)}"
 
@@ -117,17 +118,8 @@ def on_message(ws, message):
     # Handle incoming WebSocket messages (optional)
     pass
 
-def on_error(ws, error):
-    sys.stderr.write(f"WebSocket error: {error}\n")
-
-def on_close(ws, close_status_code, close_msg):
-    sys.stderr.write("WebSocket connection closed\n")
-
-def on_open(ws):
-    sys.stderr.write("WebSocket connection opened\n")
-    ## Initialize, send start message
-    send_as_json_string(ws, "Client started", client_id, 'proxy', message_type="start")
-
+# Start Electron subprocess
+def start_subprocess(ws):
     # Dev Server Path
     electron_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
     main_script_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/.dev/main/index.js"
@@ -143,7 +135,6 @@ def on_open(ws):
     threading.Thread(target=relay_input_to_subprocess, args=(proc,ws), daemon=True).start()
     threading.Thread(target=relay_output_to_stdout, args=(proc,ws), daemon=True).start()
     threading.Thread(target=relay_output_to_stderr, args=(proc,ws), daemon=True).start()
-    
 
     def cleanup():
       proc.stdin.close()
@@ -155,7 +146,29 @@ def on_open(ws):
     atexit.register(cleanup)
     proc.wait()
 
+# def restart_subprocess(ws):
+#     # Try to restart every 7 seconds until it works, once we know the process is working, stop trying to restart it
+#     while True:
+#         try:
+#             start_subprocess(ws)
+#             break
+#         except Exception as e:
+#             send_debug_message(ws, f"Error restarting subprocess: {str(e)}", client_id)
+#             time.sleep(7)
 
+def on_error(ws, error):
+    sys.stderr.write(f"WebSocket error: {error}\n")
+
+def on_close(ws, close_status_code, close_msg):
+    sys.stderr.write("WebSocket connection closed\n")
+
+def on_open(ws):
+    sys.stderr.write("WebSocket connection opened\n")
+    ## Initialize, send start message
+    send_as_json_string(ws, "Client started", client_id, 'proxy', message_type="start")
+    start_subprocess(ws)
+    
+    
 
 # Generate client id
 client_id = generate_identifier()
@@ -174,6 +187,7 @@ def relay_input_to_subprocess(proc, ws):
         if raw_data:
             if proc.poll() is not None:
                 send_debug_message(ws, "Relay stdin subprocess has terminated.", client_id)
+                # restart_subprocess(ws)
                 break
 
             try:
