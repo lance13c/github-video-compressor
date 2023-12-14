@@ -31,12 +31,10 @@ function sendDebugMessage(type: string, data: string) {
 
 
 debugWebSocket.on('open', function open() {
-  console.log('Connected to debug server');
   sendDebugMessage('info', 'Connected to debug server');
 });
 
 debugWebSocket.on('close', function close() {
-  console.log('Disconnected from debug server');
   sendDebugMessage('info', 'Disconnected from debug server');
 });
 
@@ -56,12 +54,16 @@ makeAppWithSingleInstanceLock(async () => {
     //   // Rest of your onDataReceived logic
     // });
 
-
-    // nativeMessagingHost.sendMessage({ text: 'ping start 456' });
+    // console.log(JSON.stringify({test: '123abc'}))
+    nativeMessagingHost.sendMessage({ text: 'Init ping' });
     let count = 1;
     const sendInterval = setInterval(() => {
+      sendDebugMessage('info', `ping-${count}`);
       nativeMessagingHost.sendMessage({ text: `v3-ping-${count}` });
-      console.log({ text: `console-${count}` })
+      // // SEnd this in stdin  { text: `console-${count}` }
+      // const message = Buffer.from(JSON.stringify({ text: `console-${count}` }));
+      // process.stdout.write(message);
+      // console.log('test-ping')
       count += 1;
     }, 4000);
 

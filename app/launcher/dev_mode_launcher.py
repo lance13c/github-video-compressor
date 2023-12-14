@@ -39,13 +39,14 @@ def generate_identifier():
     animal = random.choice(animals)
     return f"{color} {animal}"
 
-def read_native_message(stdin, client_id):
+# dataSource can be either stdin or stdout
+def read_native_message(dataSource, client_id):
     try:
-        text_length_bytes = stdin.read(4)
+        text_length_bytes = dataSource.read(4)
         if not text_length_bytes:
             return None, None
         text_length = struct.unpack('I', text_length_bytes)[0]
-        message = stdin.read(text_length)
+        message = dataSource.read(text_length)
         if not message:
             return None, None
 
@@ -60,6 +61,15 @@ def read_native_message(stdin, client_id):
         return message, json_message
     except Exception as e:
         return None, f"Error: {str(e)}"
+
+# Sends native message to chrome extension
+# Data should be serializable json
+def send_message_to_chrome_extension(data, client_id):
+    encoded_message = json.dumps(data).encode('utf-8')
+    message_length = len(encoded_message)
+    sys.stdout.buffer.write(struct.pack('I', message_length))
+    sys.stdout.buffer.write(encoded_message)
+    sys.stdout.buffer.flush()
         
 def send_as_json_string(ws, data, client_id, source, message_type="data"):
     """Send data as a JSON string over WebSocket."""
@@ -163,7 +173,7 @@ def relay_input_to_subprocess(proc, ws):
         raw_data, parsed_data = read_native_message(sys.stdin.buffer, client_id)
         if raw_data:
             if proc.poll() is not None:
-                send_debug_message(ws, "Subprocess has terminated.", client_id)
+                send_debug_message(ws, "Relay stdin subprocess has terminated.", client_id)
                 break
 
             try:
@@ -173,7 +183,7 @@ def relay_input_to_subprocess(proc, ws):
 
                 # Send parsed data over WebSocket
                 if parsed_data:
-                    send_as_json_string(ws, parsed_data, client_id, source="extension")
+                    send_as_json_string(ws, parsed_data, client_id, source="proxy-stdin")
             except Exception as e:
                 send_debug_message(ws, f"Error in sending data to subprocess: {str(e)}", client_id)
         else:
@@ -183,21 +193,34 @@ def relay_input_to_subprocess(proc, ws):
 
 def relay_output_to_stdout(proc, ws):
     send_debug_message(ws, "Output thread started", client_id)
-    try:
+    try: 
         while True:
-            data = proc.stdout.buffer.read1(1024)
-            if data:
-                sys.stdout.buffer.write(data)
-                sys.stdout.buffer.flush()
-                send_as_json_string(ws, data, client_id, source="desktop-app")
-            else:
+            if proc.poll() is not None:
+                send_debug_message(ws, "Relay stdout subprocess has terminated.", client_id)
                 break
+
+            # Read the message using the existing read_native_message function
+            raw_data, parsed_data = read_native_message(proc.stdout, client_id)
+            if raw_data:
+                # Write the raw data to the system's stdout
+                send_message_to_chrome_extension(parsed_data, client_id)
+
+                # Send the parsed JSON data over WebSocket
+                if parsed_data:
+                    send_as_json_string(ws, parsed_data, client_id, source="proxy-stdout")
+            else:
+                time.sleep(0.1)  # Add a short delay to prevent a tight loop
     except Exception as e:
         sys.stderr.write(f"Error relaying output to stdout: {e}\n")
 
+
 def relay_output_to_stderr(proc, ws):
+    send_debug_message(ws, "Stderr thread started", client_id)
     try:
         while True:
+            if proc.poll() is not None:
+                send_debug_message(ws, "Relay stderr subprocess has terminated.", client_id)
+                break
             data = proc.stderr.buffer.read1(1024)
             if data:
                 sys.stderr.buffer.write(data)
@@ -205,7 +228,7 @@ def relay_output_to_stderr(proc, ws):
                 # Send this data over WebSocket
                 send_as_json_string(ws, data, client_id, source="desktop-app-stderr")
             else:
-                break
+                time.sleep(0.1)  # Add a short delay to prevent a tight loop
     except Exception as e:
         sys.stderr.write(f"Error relaying output to stderr: {e}\n")
 
