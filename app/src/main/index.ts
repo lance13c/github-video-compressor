@@ -9,16 +9,12 @@ import { registerAboutWindowCreationByIPC } from './windows'
 makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
 
-  // Hello Worlda adfadsfasdfasfdfsdadsf
-  // YOLOsdf sdfadfs aldskflskjdfadfdfdadfdafd
-
   try {
-    // console.log('ad--------------------------f', tempIcon)
     const nativeMessagingHost = new NativeMessagingHost()
 
     nativeMessagingHost.addListener(parsedData => sendDebugMessage('nativeMessagingHostData', parsedData))
 
-    sendDebugMessage('info', 'Electron app started - HELLO 1111') // fadsfadfa afdadf
+    sendDebugMessage('info', 'Electron app started - HELLO 1111')
 
     const sendInterval = setInterval(() => {
       sendDebugMessage('info', 'TEST ELECTRON 646464')
