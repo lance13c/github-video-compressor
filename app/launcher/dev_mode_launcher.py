@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 
+import backoff
 import websocket
 
 input_queue = queue.Queue()
@@ -38,6 +39,10 @@ def generate_identifier():
     color = random.choice(colors)
     animal = random.choice(animals)
     return f"{color} {animal}"
+
+# Generate client id
+client_id = generate_identifier()
+
 
 # dataSource can be either stdin or stdout
 def read_native_message(dataSource, client_id):
@@ -80,7 +85,7 @@ def send_as_json_string(ws, data, client_id, source, message_type="data"):
             json_data = json.loads(data.decode('utf-8'))
             data = json.dumps(json_data)
         except json.JSONDecodeError as e:
-            send_debug_message(ws, f"JSONDecodeError: {str(e)}", client_id)
+            # send_debug_message(ws, f"JSONDecodeError: {str(e)}", client_id)
             data = data.decode('utf-8')
     
     message = json.dumps({
@@ -91,36 +96,36 @@ def send_as_json_string(ws, data, client_id, source, message_type="data"):
     })
     ws.send(message)
 
-# def read_from_extension(input_queue):
-#     while True:
-#         data = read_native_message()  # Implement this function
-#         input_queue.put(data)
-
-# def write_to_electron(output_queue, proc):
-#     while True:
-#         data = output_queue.get()  # Blocks until data is available
-#         proc.stdin.write(data)
-#         proc.stdin.flush()
-
-# def read_from_electron(proc, output_queue):
-#     while True:
-#         data = proc.stdout.readline()
-#         output_queue.put(data)
-
 # Proxy Heartbeat
 def run_is_alive(ws, client_id):
     while True:
         send_as_json_string(ws, "proxy is alive", client_id, source="proxy", message_type="is_alive")
         time.sleep(3)
 
-# Dev Server Websocket Connection
-def on_message(ws, message):
-    # Handle incoming WebSocket messages (optional)
-    pass
+# Subprocess
+# Global variable to keep track of the subprocess
+proc = None
+input_thread_active = False
+output_thread_active = False
+stderr_thread_active = False
+
+def cleanup():
+    global proc, input_thread_active, output_thread_active, stderr_thread_active
+    # Stop the threads
+    input_thread_active = False
+    output_thread_active = False
+    stderr_thread_active = False
+
+    if (proc):
+      proc.stdin.close()
+      proc.terminate()
+      proc.wait()
+   
 
 # Start Electron subprocess
 def start_subprocess(ws):
     # Dev Server Path
+    global proc
     electron_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
     main_script_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/.dev/main/index.js"
     # Start Electron subprocess
@@ -135,59 +140,24 @@ def start_subprocess(ws):
     threading.Thread(target=relay_input_to_subprocess, args=(proc,ws), daemon=True).start()
     threading.Thread(target=relay_output_to_stdout, args=(proc,ws), daemon=True).start()
     threading.Thread(target=relay_output_to_stderr, args=(proc,ws), daemon=True).start()
-
-    def cleanup():
-      proc.stdin.close()
-      proc.terminate()
-      proc.wait()
-      if ws:
-        ws.close()
-
     atexit.register(cleanup)
-    proc.wait()
-
-# def restart_subprocess(ws):
-#     # Try to restart every 7 seconds until it works, once we know the process is working, stop trying to restart it
-#     while True:
-#         try:
-#             start_subprocess(ws)
-#             break
-#         except Exception as e:
-#             send_debug_message(ws, f"Error restarting subprocess: {str(e)}", client_id)
-#             time.sleep(7)
-
-def on_error(ws, error):
-    sys.stderr.write(f"WebSocket error: {error}\n")
-
-def on_close(ws, close_status_code, close_msg):
-    sys.stderr.write("WebSocket connection closed\n")
-
-def on_open(ws):
-    sys.stderr.write("WebSocket connection opened\n")
-    ## Initialize, send start message
-    send_as_json_string(ws, "Client started", client_id, 'proxy', message_type="start")
-    start_subprocess(ws)
-    
-    
-
-# Generate client id
-client_id = generate_identifier()
-
-# WebSocket setup
-ws_url = "ws://localhost:3333"
-ws = websocket.WebSocketApp(ws_url,
-  on_open=on_open,
-  on_message=on_message,
-  on_error=on_error,
-  on_close=on_close)
   
+# New function to restart the subprocess
+def restart_subprocess(ws):
+    cleanup()
+    start_subprocess(ws)
+
+# Dev Server Websocket Connection
+
+
 def relay_input_to_subprocess(proc, ws):
-    while True:
+    global input_thread_active
+    while input_thread_active:
         raw_data, parsed_data = read_native_message(sys.stdin.buffer, client_id)
         if raw_data:
             if proc.poll() is not None:
                 send_debug_message(ws, "Relay stdin subprocess has terminated.", client_id)
-                # restart_subprocess(ws)
+                restart_subprocess(ws)
                 break
 
             try:
@@ -196,8 +166,8 @@ def relay_input_to_subprocess(proc, ws):
                 proc.stdin.flush()
 
                 # Send parsed data over WebSocket
-                if parsed_data:
-                    send_as_json_string(ws, parsed_data, client_id, source="proxy-stdin")
+                # if parsed_data:
+                #     send_as_json_string(ws, parsed_data, client_id, source="proxy-stdin")
             except Exception as e:
                 send_debug_message(ws, f"Error in sending data to subprocess: {str(e)}", client_id)
         else:
@@ -206,9 +176,10 @@ def relay_input_to_subprocess(proc, ws):
 
 
 def relay_output_to_stdout(proc, ws):
+    global stderr_thread_active
     send_debug_message(ws, "Output thread started", client_id)
     try: 
-        while True:
+        while stderr_thread_active:
             if proc.poll() is not None:
                 send_debug_message(ws, "Relay stdout subprocess has terminated.", client_id)
                 break
@@ -229,16 +200,17 @@ def relay_output_to_stdout(proc, ws):
 
 
 def relay_output_to_stderr(proc, ws):
+    global stderr_thread_active
     send_debug_message(ws, "Stderr thread started", client_id)
     try:
-        while True:
+        while stderr_thread_active:
             if proc.poll() is not None:
                 send_debug_message(ws, "Relay stderr subprocess has terminated.", client_id)
                 break
-            data = proc.stderr.buffer.read1(1024)
+            data: bytes = proc.stderr.read(1024)
             if data:
-                sys.stderr.buffer.write(data)
-                sys.stderr.buffer.flush()
+                sys.stderr.write(data.decode('utf-8'))
+                sys.stderr.flush()
                 # Send this data over WebSocket
                 send_as_json_string(ws, data, client_id, source="desktop-app-stderr")
             else:
@@ -246,8 +218,41 @@ def relay_output_to_stderr(proc, ws):
     except Exception as e:
         sys.stderr.write(f"Error relaying output to stderr: {e}\n")
 
+def on_message(ws, message):
+    # Restart subprocess
+    if (message == 'refresh'):
+        send_debug_message(ws, "Refreshing subprocess", client_id)
+        restart_subprocess(ws)
+    else:
+        send_debug_message(ws, f"Received message: {message}", client_id)
+        
+
+def on_error(ws, error):
+    send_debug_message(ws, f"WebSocket error: {error}", client_id)
+
+def on_close(ws, close_status_code, close_msg):
+    send_debug_message(ws, f"WebSocket connection closed: {close_msg}", client_id)
+
+def on_open(ws):
+    ## Initialize, send start message
+    send_as_json_string(ws, "Client started", client_id, 'proxy', message_type="start")
+    start_subprocess(ws)
+
+
+# WebSocket setup
+ws_url = "ws://localhost:3333"
+@backoff.on_exception(backoff.expo, websocket.WebSocketException, max_tries=8)
+def reconnect():
+    global ws
+    ws = websocket.WebSocketApp(ws_url,
+                                on_open=on_open,
+                                on_message=on_message,
+                                on_error=on_error,
+                                on_close=on_close)
+    ws.run_forever()
+    wst = threading.Thread(target=ws.run_forever)
+    wst.start()
+
 # Start WebSocket connection in a separate thread
-ws_thread = threading.Thread(target=ws.run_forever)
-ws_thread.start()
 
-
+reconnect()

@@ -22,6 +22,11 @@ export function sendDebugMessage(type: string, data: string | Record<string, any
 
   if (debugWebSocket.readyState === WebSocket.OPEN) {
     debugWebSocket.send(JSON.stringify(message))
+  } else {
+    setTimeout(() => {
+      // Try again in 2 seconds
+      sendDebugMessage(type, data)
+    }, 2000)
   }
 }
 

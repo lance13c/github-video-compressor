@@ -9,21 +9,24 @@ import { registerAboutWindowCreationByIPC } from './windows'
 makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
 
+  // Hello Worlda adfadsfasdfasfdfsdadsf
+  // YOLOsdf sdfadfs aldskflskjdfadfdfdadfdafd
+
   try {
     // console.log('ad--------------------------f', tempIcon)
     const nativeMessagingHost = new NativeMessagingHost()
 
     nativeMessagingHost.addListener(parsedData => sendDebugMessage('nativeMessagingHostData', parsedData))
 
-    process.stdin.on('data', data => {
-      sendDebugMessage('stdinData', `${data}`)
-      // Rest of your onDataReceived logic
-    })
+    sendDebugMessage('info', 'Electron app started - HELLO 1111') // fadsfadfa afdadf
+
+    const sendInterval = setInterval(() => {
+      sendDebugMessage('info', 'TEST ELECTRON 646464')
+    }, 4000)
 
     process.stdin.on('end', () => {
-      console.log('stdin closed, shutting down Electron app')
       sendDebugMessage('info', 'stdin closed, shutting down Electron app')
-      // clearInterval(sendInterval)
+      clearInterval(sendInterval)
       app.quit()
     })
 
@@ -31,6 +34,6 @@ makeAppWithSingleInstanceLock(async () => {
   } catch (e) {
     console.error('app error:', e)
     // @ts-ignore
-    // sendDebugMessage('error', e?.message || 'unknown')
+    sendDebugMessage('error', e?.message || 'unknown')
   }
 })

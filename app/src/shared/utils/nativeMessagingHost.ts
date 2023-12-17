@@ -15,7 +15,6 @@ const objectToStdMessage = (message: Record<string, any>): Buffer => {
 
 // Create stdMessageToObject
 const bufferToObject = (buffer: Buffer): Record<string, any> | null => {
-  sendDebugMessage('BUFFER', buffer.toString('hex'))
   if (buffer.length < 4) {
     sendDebugMessage('bufferObj', 'Buffer is too short to contain message length.')
     return null
@@ -67,7 +66,7 @@ export class NativeMessagingHost {
     process.stdin.on('data', (data: Buffer) => {
       // Handle incoming data from the Chrome extension
       // For example, process and send back video file
-      sendDebugMessage('buffer received', data.toString())
+      // sendDebugMessage('buffer received', data.toString())
       this.onDataReceived(data)
     })
   }
@@ -89,9 +88,9 @@ export class NativeMessagingHost {
   private onDataReceived(data: Buffer): void {
     const bufferObject = bufferToObject(data)
     const parsedData = convertJsonUint8ToObject(bufferObject || {})
-    sendDebugMessage('onDataReceived', parsedData)
+    // sendDebugMessage('onDataReceived', parsedData)
     const dataAsString = JSON.stringify(parsedData)
-    this.sendMessage({ type: 'text', progress: 1, data: dataAsString })
+    // this.sendMessage({ type: 'text', progress: 1, data: dataAsString })
 
     this.listeners.forEach(listener => {
       listener(parsedData, data)

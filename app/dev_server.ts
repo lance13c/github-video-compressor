@@ -9,9 +9,17 @@ let buildProcess: ChildProcess | null = null
 
 // Broadcast message to all clients
 const broadcast = (message: string): void => {
+  console.log('broadcast', message)
   wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message)
+    try {
+      if (client.readyState === WebSocket.OPEN) {
+        console.log('client send', message)
+        client.send(message, err => {
+          console.error('client send error', err)
+        })
+      }
+    } catch (e) {
+      console.error('client send error exception', e)
     }
   })
 }
