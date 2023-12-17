@@ -90,7 +90,8 @@ export class NativeMessagingHost {
     const bufferObject = bufferToObject(data)
     const parsedData = convertJsonUint8ToObject(bufferObject || {})
     sendDebugMessage('onDataReceived', parsedData)
-    this.sendMessage({ type: 'text', progress: 1, data: parsedData?.toString() || '' })
+    const dataAsString = JSON.stringify(parsedData)
+    this.sendMessage({ type: 'text', progress: 1, data: dataAsString })
 
     this.listeners.forEach(listener => {
       listener(parsedData, data)
