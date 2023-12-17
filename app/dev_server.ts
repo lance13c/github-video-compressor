@@ -13,7 +13,6 @@ const broadcast = (message: string): void => {
   wss.clients.forEach(client => {
     try {
       if (client.readyState === WebSocket.OPEN) {
-        console.log('client send', message)
         client.send(message, err => {
           console.error('client send error', err)
         })

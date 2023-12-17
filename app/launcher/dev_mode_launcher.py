@@ -100,7 +100,7 @@ def send_as_json_string(ws, data, client_id, source, message_type="data"):
 def run_is_alive(ws, client_id):
     while True:
         send_as_json_string(ws, "proxy is alive", client_id, source="proxy", message_type="is_alive")
-        time.sleep(3)
+        time.sleep(7)
 
 # Subprocess
 # Global variable to keep track of the subprocess
