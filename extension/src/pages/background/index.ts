@@ -8,18 +8,10 @@ const init = async () => {
   console.log('window.navigator.hardwareConcurrency', globalThis.navigator.hardwareConcurrency);
   try {
     const nativeMessageClient = new NativeMessagingClient('com.dominic_cicilio.github_video_compressor');
-    // nativeMessageClient.addListener(message => {
-    //   console.log('testAddListener message: ', message);
-    // });
 
-    // nativeMessageClient.sendMessage({ test: '1' });
-    // nativeMessageClient.sendMessage({ test: '1' });
-    // nativeMessageClient.sendMessage({ test: '1' });
-    // nativeMessageClient.sendMessage({ test: '1' });
-    // nativeMessageClient.sendMessage({ test: 'test456' });
     let count = 0;
     setInterval(() => {
-      nativeMessageClient.sendMessage({ test: `message from extension ${count}` });
+      nativeMessageClient.sendMessage({ type: 'text', progress: 1, data: `message from extension ${count}` });
       count += 1;
     }, 4000);
     

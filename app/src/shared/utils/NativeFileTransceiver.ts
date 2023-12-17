@@ -1,42 +1,63 @@
 // FileChunkSender.ts
 
-import { NativeMessagingHost } from 'shared/utils/nativeMessagingHost';
-import { uint8ArrayToBase64 } from './binaryHelpers';
+import { ChunkBundler } from 'shared/utils/ChunkBundler'
+import { NativeMessagingHost } from 'shared/utils/nativeMessagingHost'
+import { uint8ArrayToBase64 } from './binaryHelpers'
 
 export type FileChunkMessage = {
-  type: 'fileChunk';
-  chunk: string; // base64 encoded file chunk;
-  fileType: string;
-  progress: number;
-  isComplete: boolean;
-  url?: string;
-};
+  type: 'fileChunk'
+  chunk: string // base64 encoded file chunk;
+  fileType: string
+  progress: number
+  isComplete: boolean
+  url?: string
+}
 
-export type Listener = (message: Record<string, any>) => void;
+export type Listener = (parsedData: Record<string, any> | null, rawData: Buffer) => void
 
 export class NativeFileTransceiver {
-  private readonly chunkSize: number;
-  private readonly nativeMessagingHost: NativeMessagingHost
+  private readonly chunkSize: number
+  private nativeMessagingHost: NativeMessagingHost
+  private chunkBundler: ChunkBundler | null = null
 
-
-  constructor({nativeMessageHost, chunkSize = 0.9 * 1024 * 1024}: {
-    nativeMessageHost: NativeMessagingHost;
-    chunkSize: number;
-    
+  constructor({
+    nativeMessageHost,
+    chunkSize = 0.9 * 1024 * 1024,
+  }: {
+    nativeMessageHost: NativeMessagingHost
+    chunkSize: number
   }) {
-    this.chunkSize = Math.floor(chunkSize); // Default to 0.9MB , the max size for native messaging to client is 1Mb
-    this.nativeMessagingHost = nativeMessageHost;
-    this.nativeMessagingHost.addListener((data) => {
-      const chunk = data?.chunk as Uint8Array;
-      if (!chunk) {
-        console.error(chunk);
+    this.chunkSize = Math.floor(chunkSize) // Default to 0.9MB , the max size for native messaging to client is 1Mb
+    this.nativeMessagingHost = nativeMessageHost
+    this.nativeMessagingHost.addListener(data => {
+      const internalData = data as {
+        chunk: Uint8Array
+        isFirst: boolean
       }
-      // Send data back to client in chunks
-      this.sendFile({
-        data: chunk,
-        fileType: 'video/mp4',
-      });
+      const chunk = data?.chunk as Uint8Array
+      const isFirst = data?.isFirst
 
+      if (!chunk) {
+        // Do nothing when not a chunk.
+        return
+      }
+
+      // if (isFirst) {
+      //   // Get total size one first load.
+      //   this.chunkBundler = new ChunkBundler(20)
+      //   this.chunkBundler.addFileChunk(data)
+      // }
+
+      // if (!!this.chunkBundler) {
+      //   this.chunkBundler.addFileChunk(data)
+      // }
+
+      // if ()
+      // // Send data back to client in chunks
+      // this.sendFile({
+      //   data: chunk,
+      //   fileType: 'video/mp4',
+      // });
     })
   }
 
@@ -46,67 +67,68 @@ export class NativeFileTransceiver {
     progress,
     isComplete,
   }: {
-    chunk: Uint8Array;
-    fileType: string;
-    progress: number;
-    isComplete: boolean;
+    chunk: Uint8Array
+    fileType: string
+    progress: number
+    isComplete: boolean
   }): Promise<boolean> {
     return new Promise((resolve, reject) => {
       try {
-        const chunkBase64 = uint8ArrayToBase64(chunk);
-        console.log('chunkBase64', chunkBase64);
+        const chunkBase64 = uint8ArrayToBase64(chunk)
+        console.log('chunkBase64', chunkBase64)
         const fileChunkMessage: FileChunkMessage = {
           type: 'fileChunk',
           chunk: chunkBase64,
           progress,
           fileType,
           isComplete,
-        };
-        this.nativeMessagingHost.sendMessage(fileChunkMessage);
-        resolve(true);
+        }
+
+        this.nativeMessagingHost.sendMessage(fileChunkMessage)
+        resolve(true)
       } catch (e) {
-        reject(e);
+        reject(e)
       }
-    });
+    })
   }
 
   public async sendFile({
     data,
     fileType,
   }: {
-    data: Uint8Array;
-    fileType: 'video/mp4' | 'video/mpeg' | 'video/webm';
+    data: Uint8Array
+    fileType: 'video/mp4' | 'video/mpeg' | 'video/webm'
   }): Promise<void> {
-    console.error('hit send file');
+    console.error('hit send file')
 
-    const totalChunks = Math.ceil(data.byteLength / this.chunkSize);
+    const totalChunks = Math.ceil(data.byteLength / this.chunkSize)
 
     for (let index = 0; index < totalChunks; index++) {
-      console.error('chunk sent');
+      console.error('chunk sent')
       // Determine if this is the last chunk
-      const isComplete = index === totalChunks - 1;
+      const isComplete = index === totalChunks - 1
 
       // Calculate the start and end of the current chunk
-      const start = index * this.chunkSize;
-      let end = start + this.chunkSize;
+      const start = index * this.chunkSize
+      let end = start + this.chunkSize
 
       if (isComplete) {
-        end = data.byteLength;
+        end = data.byteLength
       } else if (end > data.byteLength) {
-        end = data.byteLength;
+        end = data.byteLength
       }
 
       // Slice the chunk from the data
-      const chunk = data.slice(start, end);
+      const chunk = data.slice(start, end)
 
       // Calculate the progress
-      const progress = end / data.byteLength;
+      const progress = end / data.byteLength
 
       // Convert chunk to Uint8Array and send
-      this.sendChunk({ chunk, fileType, progress, isComplete });
+      this.sendChunk({ chunk, fileType, progress, isComplete })
     }
 
-    console.log('Last chunk sent: ', totalChunks);
+    console.log('Last chunk sent: ', totalChunks)
   }
 }
 
@@ -118,16 +140,16 @@ export class NativeFileTransceiver {
 //   private tabId: number = -1;
 //   private url: string = '';
 
-  constructor(listener: (blob: Blob, tabId: number) => Promise<void>) {
-    this.listener = listener;
-    chrome.runtime.onMessage.addListener((message: FileChunkMessage, sender) => {
-      this.url = message.url;
-      if (message.type === 'fileChunk') {
-        this.tabId = sender.tab?.id;
-        this.handleFileChunk(message);
-      }
-    });
-  }
+// constructor(listener: (blob: Blob, tabId: number) => Promise<void>) {
+//   this.listener = listener;
+//   chrome.runtime.onMessage.addListener((message: FileChunkMessage, sender) => {
+//     this.url = message.url;
+//     if (message.type === 'fileChunk') {
+//       this.tabId = sender.tab?.id;
+//       this.handleFileChunk(message);
+//     }
+//   });
+// }
 
 //   private handleFileChunk(message: { chunk: string; progress: number; fileType: string; isComplete: boolean }): void {
 //     const chunkUint8 = base64ToUint8Array(message.chunk);

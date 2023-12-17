@@ -1,5 +1,11 @@
 type Listener = (...args: unknown[]) => void;
 
+type Message = {
+  type: 'text' | 'video/mp4' | 'video/mpeg' | 'video/ogg' | 'video/webm' | 'video/quicktime',
+  progress: number, // 0-1
+  data: string, // Files will be in binary chunks
+}
+
 export class NativeMessagingClient {
   private port: chrome.runtime.Port;
   private listeners: Listener[] = [];
@@ -26,7 +32,7 @@ export class NativeMessagingClient {
     }
   }
 
-  sendMessage(message: Record<string, unknown>): void {
+  sendMessage(message: Message): void {
     const messageString = JSON.stringify(message);
     const messageBuffer = new TextEncoder().encode(messageString);
     const lengthBuffer = new ArrayBuffer(4);
@@ -46,10 +52,10 @@ export class NativeMessagingClient {
   }
 
   addListener(listener: (arg: unknown) => void): void {
-    //   this.port.onMessage.addListener((...args) => {
-    //     listener(args);
-    //     return false;
-    // });
+      this.port.onMessage.addListener((...args) => {
+        listener(args);
+        return false;
+    });
   }
 
   removeListener(name: string): void {

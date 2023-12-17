@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron'
 
-import { WindowCreationByIPC, BrowserWindowOrNull } from 'shared/types'
+import { BrowserWindowOrNull, WindowCreationByIPC } from 'shared/types'
 
 export function registerWindowCreationByIPC({
   channel,

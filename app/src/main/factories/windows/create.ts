@@ -1,8 +1,8 @@
-import { createFileRoute, createURLRoute } from 'electron-router-dom'
 import { BrowserWindow } from 'electron'
+import { createFileRoute, createURLRoute } from 'electron-router-dom'
 import { join } from 'path'
 
-import { ENVIRONMENT } from 'shared/constants'
+import { ENVIRONMENT } from 'constants'
 import { WindowProps } from 'shared/types'
 
 export function createWindow({ id, ...settings }: WindowProps) {

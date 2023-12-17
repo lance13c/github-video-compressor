@@ -12,6 +12,7 @@
   "scripts": {
     "start": "electron-vite preview",
     "dev": "npx ts-node ./dev_server.ts",
+    "dev:electron": "electron-vite dev",
     "dev:launcher": "./launcher/dev_mode_launcher.py",
     "build:launcher": "pyinstaller --distpath=./launcher/dist ./launcher/dev_mode_launcher.py",
     "compile:app": "electron-vite build",
