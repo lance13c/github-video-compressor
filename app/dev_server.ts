@@ -14,7 +14,9 @@ const broadcast = (message: string): void => {
     try {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message, err => {
-          console.error('client send error', err)
+          if (err) {
+            console.error('client send error', err)
+          }
         })
       }
     } catch (e) {

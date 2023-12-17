@@ -105,9 +105,9 @@ def run_is_alive(ws, client_id):
 # Subprocess
 # Global variable to keep track of the subprocess
 proc = None
-input_thread_active = False
-output_thread_active = False
-stderr_thread_active = False
+input_thread_active = True
+output_thread_active = True
+stderr_thread_active = True
 
 def cleanup():
     global proc, input_thread_active, output_thread_active, stderr_thread_active
@@ -152,6 +152,8 @@ def restart_subprocess(ws):
 
 def relay_input_to_subprocess(proc, ws):
     global input_thread_active
+    if input_thread_active:
+        send_debug_message(ws, "Input thread started", client_id)
     while input_thread_active:
         raw_data, parsed_data = read_native_message(sys.stdin.buffer, client_id)
         if raw_data:
@@ -176,10 +178,11 @@ def relay_input_to_subprocess(proc, ws):
 
 
 def relay_output_to_stdout(proc, ws):
-    global stderr_thread_active
-    send_debug_message(ws, "Output thread started", client_id)
+    global output_thread_active
+    if output_thread_active:
+        send_debug_message(ws, "Output thread started", client_id)
     try: 
-        while stderr_thread_active:
+        while output_thread_active:
             if proc.poll() is not None:
                 send_debug_message(ws, "Relay stdout subprocess has terminated.", client_id)
                 break
@@ -201,7 +204,8 @@ def relay_output_to_stdout(proc, ws):
 
 def relay_output_to_stderr(proc, ws):
     global stderr_thread_active
-    send_debug_message(ws, "Stderr thread started", client_id)
+    if stderr_thread_active:
+        send_debug_message(ws, "Stderr thread started", client_id)
     try:
         while stderr_thread_active:
             if proc.poll() is not None:
