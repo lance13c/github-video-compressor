@@ -1,4 +1,5 @@
 import { BackgroundFileChunkReceiver } from '@root/src/pages/background/BackgroundFileChunkUtil';
+import { NativeMessageTransceiver } from '@root/src/pages/background/NativeMessageTranceiver';
 import { NativeMessagingClient } from '@root/src/pages/background/nativeMessageClient';
 import reloadOnUpdate from 'virtual:reload-on-update-in-background-script';
 import 'webextension-polyfill';
@@ -8,13 +9,20 @@ const init = async () => {
   console.log('window.navigator.hardwareConcurrency', globalThis.navigator.hardwareConcurrency);
   try {
     const nativeMessageClient = new NativeMessagingClient('com.dominic_cicilio.github_video_compressor');
+    const nativeMessageTransceiver = new NativeMessageTransceiver({
+      chunkSizeIn: 1024,
+      chunkSizeOut: 1024,
+    });
 
-    let count = 0;
-    setInterval(() => {
-      nativeMessageClient.sendMessage({ type: 'text', progress: 1, data: `message from extension ${count}` });
-      count += 1;
-    }, 4000);
-    
+    const dataStream = nativeMessageTransceiver.createDataStream(nativeMessageClient.addListener)
+
+    dataStream.onProgress((progress, total) => {
+      console.log('extension progress', progress, total);
+    })
+
+    dataStream.onComplete((message) => {
+      console.log('extension complete', message);
+    })
 
     new BackgroundFileChunkReceiver(async blob => {
       console.log('hit background file receiver');
@@ -25,7 +33,17 @@ const init = async () => {
         const fileName = `video.${fileExtension}`;
 
         // console.log('background file name', fileName)
-        // nativeMessageClient.sendMessage('fileName:' + fileName);
+        nativeMessageClient.sendMessage({
+          progress: 1,
+          type: 'text',
+          data: 'fileName:' + fileName
+        });
+
+        const fileAsUint8 = new Uint8Array((await blob.arrayBuffer()));
+
+        nativeMessageTransceiver.send(fileAsUint8, 'video/mp4', (progress, total) => {
+          console.log('sending progress:', progress, total);
+        })
 
         console.log('message sent complete');
 

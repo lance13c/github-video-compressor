@@ -1,7 +1,7 @@
 // FileChunkSender.ts
 
-import { ChunkBundler } from 'shared/utils/ChunkBundler'
-import { NativeMessagingHost } from 'shared/utils/nativeMessagingHost'
+import { ChunkBundler } from 'utils/ChunkBundler'
+import { NativeMessagingHost } from 'utils/nativeMessagingHost'
 import { uint8ArrayToBase64 } from './binaryHelpers'
 
 export type FileChunkMessage = {

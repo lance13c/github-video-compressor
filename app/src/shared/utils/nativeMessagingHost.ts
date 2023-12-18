@@ -2,7 +2,8 @@
 import { sendDebugMessage } from 'main/dev_websockets'
 import process from 'process'
 import { type Message } from 'shared/types'
-import { Listener } from 'shared/utils/NativeFileTransceiver'
+
+export type Listener = (parsedData: Message) => void
 
 const objectToStdMessage = (message: Record<string, any>): Buffer => {
   const buffer = Buffer.from(JSON.stringify(message))
@@ -24,6 +25,9 @@ const bufferToObject = (buffer: Buffer): Record<string, any> | null => {
   const messageLength = buffer.readUInt32LE(0)
 
   if (buffer.length < 4 + messageLength) {
+    sendDebugMessage('bufferObj', `Expected message length: ${messageLength + 4}`)
+    sendDebugMessage('bufferObj', `Actual message length: ${buffer.length}`)
+
     sendDebugMessage('bufferObj', 'Buffer does not contain the full message.')
     return null
   }
@@ -81,15 +85,15 @@ export class NativeMessagingHost {
     }
   }
 
-  addListener(listener: Listener): void {
+  addListener = (listener: Listener) => {
     this.listeners.push(listener)
   }
 
   private onDataReceived(data: Buffer): void {
     const bufferObject = bufferToObject(data)
     const parsedData = convertJsonUint8ToObject(bufferObject || {})
-    // sendDebugMessage('onDataReceived', parsedData)
-    const dataAsString = JSON.stringify(parsedData)
+    sendDebugMessage('onDataReceived', parsedData)
+    // const dataAsString = JSON.stringify(parsedData)
     // this.sendMessage({ type: 'text', progress: 1, data: dataAsString })
 
     this.listeners.forEach(listener => {

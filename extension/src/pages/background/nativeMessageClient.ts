@@ -51,9 +51,9 @@ export class NativeMessagingClient {
     this.port = null;
   }
 
-  addListener(listener: (arg: unknown) => void): void {
-      this.port.onMessage.addListener((...args) => {
-        listener(args);
+  addListener = (listener: (message: Message) => void) => {
+      this.port.onMessage.addListener((message) => {
+        listener(message);
         return false;
     });
   }

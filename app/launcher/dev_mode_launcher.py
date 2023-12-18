@@ -18,6 +18,8 @@ output_queue = queue.Queue()
 
 colors = ["red", "blue", "green", "yellow", "pink", "black", "white", "purple", "orange", "brown"]
 animals = ["lion", "tiger", "bear", "flamingo", "eagle", "dolphin", "shark", "wolf", "fox", "deer"]
+# 65536
+
 
 # Debug
 def send_debug_message(ws, debug_message, client_id):
