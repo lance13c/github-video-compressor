@@ -16,6 +16,7 @@ const objectToStdMessage = (message: Record<string, any>): Buffer => {
 
 // Create stdMessageToObject
 const bufferToObject = (buffer: Buffer): Record<string, any> | null => {
+  // sendDebugMessage('buffer', buffer)
   if (buffer.length < 4) {
     sendDebugMessage('bufferObj', 'Buffer is too short to contain message length.')
 
@@ -25,9 +26,11 @@ const bufferToObject = (buffer: Buffer): Record<string, any> | null => {
   // Read the first 4 bytes to get the message length
   const messageLength = buffer.readUInt32LE(0)
 
+  sendDebugMessage('buffer length:', `${messageLength}`)
+
   if (buffer.length < 4 + messageLength) {
     sendDebugMessage('bufferObj', `Expected message length: ${messageLength + 4}`)
-    sendDebugMessage('bufferObj', `Actual message length: ${buffer.length}`)
+    sendDebugMessage('bufferObj', `Actual message length: ${buffer.byteLength}`)
 
     sendDebugMessage('bufferObj', 'Buffer does not contain the full message.')
 
@@ -35,11 +38,12 @@ const bufferToObject = (buffer: Buffer): Record<string, any> | null => {
   }
 
   // Extract the JSON message from the buffer
-  const jsonMessage = buffer.slice(4, 4 + messageLength).toString('utf-8')
+  const messageBuffer = buffer.slice(4, 4 + messageLength)
+  const messageString = new TextDecoder('utf-8').decode(messageBuffer)
 
   try {
     // Parse the JSON message back into an object
-    return JSON.parse(jsonMessage)
+    return JSON.parse(messageString)
   } catch (error) {
     // @ts-ignore
     throw new Error('Error bufferObj parsing JSON from buffer:', error?.message || 'unknown')
@@ -94,13 +98,14 @@ export class NativeMessagingHost {
     try {
       const bufferObject = bufferToObject(data)
       const parsedData = convertJsonUint8ToObject(bufferObject || {})
-      // sendDebugMessage('onDataReceived', parsedData)
+      sendDebugMessage('onDataReceived', parsedData?.progress)
       // const dataAsString = JSON.stringify(parsedData)
       // this.sendMessage({ type: 'text', progress: 1, data: dataAsString })
+      // sendDebugMessage('onDataReceived:', JSON.stringify(bufferObject))
 
-      this.listeners.forEach(listener => {
-        listener(parsedData)
-      })
+      // this.listeners.forEach(listener => {
+      //   listener(parsedData)
+      // })
     } catch (e) {
       // @ts-ignore
       sendDebugMessage('onDataReceived error', e?.message)
