@@ -41,8 +41,9 @@ const init = async () => {
 
         const fileAsUint8 = new Uint8Array((await blob.arrayBuffer()));
 
-        nativeMessageTransceiver.send(fileAsUint8, 'video/mp4', (progress, total) => {
-          console.log('sending progress:', progress, total);
+        nativeMessageTransceiver.send(fileAsUint8, 'video/mp4', (message) => {
+          console.log('sending data', message);
+          nativeMessageClient.sendMessage(message);
         })
 
         console.log('message sent complete');

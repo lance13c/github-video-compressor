@@ -33,8 +33,8 @@ makeAppWithSingleInstanceLock(async () => {
 
     const dataStream = nativeMessageTransceiver.createDataStream(nativeMessagingHost.addListener)
 
-    dataStream.onProgress((progress, total) => {
-      sendDebugMessage('info', `electron progress ${progress} / ${total}`)
+    dataStream.onProgress(formattedProgress => {
+      sendDebugMessage('info', `Progress ${formattedProgress}`)
     })
 
     dataStream.onComplete(message => {
