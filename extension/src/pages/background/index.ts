@@ -10,8 +10,7 @@ const init = async () => {
   try {
     const nativeMessageClient = new NativeMessagingClient('com.dominic_cicilio.github_video_compressor');
     const nativeMessageTransceiver = new NativeMessageTransceiver({
-      chunkSizeIn: 1024,
-      chunkSizeOut: 1024,
+      chunkSizeOut: 1.6,
     });
 
     const dataStream = nativeMessageTransceiver.createDataStream(nativeMessageClient.addListener)
@@ -33,18 +32,19 @@ const init = async () => {
         const fileName = `video.${fileExtension}`;
 
         // console.log('background file name', fileName)
-        nativeMessageClient.sendMessage({
-          progress: 1,
-          type: 'text',
-          data: 'fileName:' + fileName
-        });
+        // nativeMessageClient.sendMessage({
+        //   progress: 1,
+        //   type: 'text',
+        //   data: 'fileName:' + fileName
+        // });
 
         const fileAsUint8 = new Uint8Array((await blob.arrayBuffer()));
 
-        nativeMessageTransceiver.send(fileAsUint8, 'video/mp4', (message) => {
+        nativeMessageTransceiver.send(fileAsUint8, 'video/mp4', async (message) => {
           console.log('sending data', message);
+          console.log('byte length',new Blob([JSON.stringify(message)]).size);
           nativeMessageClient.sendMessage(message);
-        })
+        }, 0)
 
         console.log('message sent complete');
 

@@ -10,13 +10,18 @@ export type ProgressCallback = (formattedProgress: string, progress: number) => 
 export type ChunkSendCallback = (message: Message) => void
 export type CompleteCallback = (message: Message) => void
 
+// 1000x coverts it to kilobytes
+const BYTE_MULTIPLE = 1024
+
+function delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 export class NativeMessageTransceiver {
   private chunkSizeOut: number
-  private chunkSizeIn: number
 
-  constructor({ chunkSizeOut, chunkSizeIn }: { chunkSizeOut: number; chunkSizeIn: number }) {
-    this.chunkSizeOut = chunkSizeOut
-    this.chunkSizeIn = chunkSizeIn
+  // Chunksize is in kilobytes
+  constructor({ chunkSizeOut }: { chunkSizeOut: number }) {
+    this.chunkSizeOut = chunkSizeOut * BYTE_MULTIPLE
   }
 
   createDataStream(addListener: (listener: (message: Message) => void) => void): DataStream {
@@ -25,7 +30,7 @@ export class NativeMessageTransceiver {
     return dataStream
   }
 
-  send(data: Uint8Array, type: Message['type'], onChunkSend: ChunkSendCallback) {
+  async send(data: Uint8Array, type: Message['type'], onChunkSend: ChunkSendCallback, delayMs: number = 100) {
     let offset = 0
     while (offset < data.byteLength) {
       const end = Math.min(offset + this.chunkSizeOut, data.byteLength)
@@ -37,6 +42,9 @@ export class NativeMessageTransceiver {
         progress: offset / data.byteLength,
         data: chunk.toString(),
       } satisfies Message)
+
+      // Wait for a delay
+      await delay(delayMs);
     }
   }
 }

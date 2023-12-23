@@ -6,6 +6,10 @@ type Message = {
   data: string, // Files will be in binary chunks
 }
 
+function delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export class NativeMessagingClient {
   private port: chrome.runtime.Port;
   private listeners: Listener[] = [];
@@ -33,19 +37,25 @@ export class NativeMessagingClient {
   }
 
   sendMessage(message: Message): void {
+   // Convert the message to a JSON string and then to a Uint8Array
     const messageString = JSON.stringify(message);
     const messageBuffer = new TextEncoder().encode(messageString);
-    const lengthBuffer = new ArrayBuffer(4);
-    new DataView(lengthBuffer).setUint32(0, messageBuffer.byteLength, true); // true for little-endian
 
+    // Create a new ArrayBuffer for the length and set the length (little-endian)
+    const lengthBuffer = new Uint8Array(new ArrayBuffer(4));
+    new DataView(lengthBuffer.buffer).setUint32(0, messageBuffer.byteLength, true);
+
+    // Combine the length and message into a single Uint8Array
     const combinedBuffer = new Uint8Array(lengthBuffer.byteLength + messageBuffer.byteLength);
-    combinedBuffer.set(new Uint8Array(lengthBuffer), 0);
+    combinedBuffer.set(lengthBuffer, 0);
     combinedBuffer.set(messageBuffer, lengthBuffer.byteLength);
-    console.log('hit send message');
+
+    console.log('lengthBuffer', lengthBuffer)
+
+    console.log('send message');
     this.port.postMessage(combinedBuffer);
   }
   
-
   disconnect(): void {
     this.port.disconnect();
     this.port = null;
