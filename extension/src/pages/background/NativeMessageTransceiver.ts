@@ -1,5 +1,5 @@
 import type { Message } from "@root/src/util/zod.util";
-
+import { Buffer } from "buffer";
 
 // Number between 0 and 1, a percentage of the total file size
 export type ProgressCallback = (formattedProgress: string, progress: number) => void
@@ -64,24 +64,34 @@ export class DataStream {
 
   receiveData(message: Message) {
     console.log("message", message);
-  //   const dataChunk = new Uint8Array(Buffer.from(message.data, 'binary'))
+    const dataChunk = new Uint8Array(Buffer.from(message.data, 'binary'))
 
-  //   this.receivedData.push(dataChunk)
-  //   this.receivedSize += dataChunk.byteLength
-  //   // sendDebugMessage('background received data', JSON.stringify(message))
+    this.receivedData.push(dataChunk)
+    this.receivedSize += dataChunk.byteLength
+    // sendDebugMessage('background received data', JSON.stringify(message))
 
-  //   if (this.onProgressCallback) {
-  //     this.onProgressCallback(`${Math.floor(message.progress * 100) / 100}% Complete`, message.progress)
-  //   }
+    if (this.onProgressCallback) {
+      this.onProgressCallback(`${Math.floor(message.progress * 100) / 100}% Complete`, message.progress)
+    }
 
-  //   if (this.receivedSize >= this.totalSize && this.onCompleteCallback) {
-  //     const completeData = new Uint8Array(
-  //       this.receivedData.reduce((acc: number[], val: Uint8Array) => {
-  //         return acc.concat(Array.from(val))
-  //       }, [])
-  //     )
-  //     this.onCompleteCallback({ type: message.type, progress: 1, data: completeData.toString() })
-  //   }
-  // }
+    if (this.receivedSize >= this.totalSize && this.onCompleteCallback) {
+      const completeData = new Uint8Array(
+        this.receivedData.reduce((acc: number[], val: Uint8Array) => {
+          return acc.concat(Array.from(val))
+        }, [])
+      )
+
+      if (message.type === 'connection' || message.type === 'text') { 
+        console.log('hit connection');
+        // convert completeData from Uint8Array to string
+        const completeDataString = new TextDecoder().decode(completeData);
+        this.onCompleteCallback({ type: message.type, progress: 1, data: completeDataString })
+        return;
+      } else {
+        this.onCompleteCallback({ type: message.type, progress: 1, data: completeData.toString() })
+
+      }
+
+    }
   }
 }

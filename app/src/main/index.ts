@@ -9,14 +9,14 @@ import { v4 as uuidv4 } from 'uuid'
 import { makeAppWithSingleInstanceLock } from './factories'
 import { registerAboutWindowCreationByIPC } from './windows'
 
-const port = 7779
+const port = 7777
 
 makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
 
   try {
     const nativeMessagingHost = new NativeMessagingHost()
-    const httpServer = startHttpFileServer(port)
+    const { server } = startHttpFileServer(app, port)
 
     nativeMessagingHost.addListener(message => {
       sendDebugMessage('debug', `Received message ${JSON.stringify(message)}`)
@@ -65,14 +65,15 @@ makeAppWithSingleInstanceLock(async () => {
     process.stdin.on('end', () => {
       sendDebugMessage('info', 'stdin closed, shutting down Electron app')
       // clearInterval(sendInterval)
-      httpServer.close()
+      server.close()
       app.quit()
     })
 
     registerAboutWindowCreationByIPC()
   } catch (e) {
-    console.error('app error:', e)
     // @ts-ignore
     sendDebugMessage('error', e?.message || 'unknown')
+    app.quit()
+    console.error('app error:', e)
   }
 })

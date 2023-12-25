@@ -2,7 +2,7 @@ import { BackgroundFileChunkReceiver } from '@root/src/pages/background/Backgrou
 import { NativeMessageTransceiver } from '@root/src/pages/background/NativeMessageTransceiver';
 import { NativeMessagingClient } from '@root/src/pages/background/nativeMessageClient';
 import { setToken } from '@root/src/pages/background/tokenManager';
-import { sendFileToServer } from '@root/src/util/file.util';
+import { pingTest, sendFileToServer } from '@root/src/util/file.util';
 // import { sendFileToServer } from '@root/src/util/file.util';
 import reloadOnUpdate from 'virtual:reload-on-update-in-background-script';
 import 'webextension-polyfill';
@@ -30,6 +30,8 @@ const init = async () => {
         const token = message.data;
         console.log('info', `Received token ${token}`);
         setToken(token);
+
+        await pingTest();
       }
     })
 
