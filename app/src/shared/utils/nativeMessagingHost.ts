@@ -1,7 +1,8 @@
 // NativeMessagingHost.ts
+import { readSync } from 'fs'
 import { sendDebugMessage } from 'main/dev_websockets'
 import process from 'process'
-import { type Message } from 'shared/types'
+import { Message, MessageSchema } from 'shared/utils/zod.util'
 
 export type Listener = (parsedData: Message) => void
 
@@ -68,16 +69,33 @@ function convertJsonUint8ToObject(data: Record<string, any>): Record<string, any
   }
 }
 
+function readFullSync(fd: number, buf: Buffer) {
+  let offset = 0
+  while (offset < buf.byteLength) {
+    offset += readSync(fd, buf, { offset })
+  }
+  return buf
+}
+
 export class NativeMessagingHost {
   private listeners: Listener[] = []
 
   constructor() {
-    process.stdin.on('data', (data: Buffer) => {
-      // Handle incoming data from the Chrome extension
-      // For example, process and send back video file
-      // sendDebugMessage('buffer received', data.toString())
-      this.onDataReceived(data)
-    })
+    // process.stdin.on('data', (data: Buffer) => {
+    //   // Handle incoming data from the Chrome extension
+    //   // For example, process and send back video file
+    //   // sendDebugMessage('buffer received', data.toString())
+    //   this.onDataReceived(data)
+    // })
+
+    this.readStdin()
+  }
+
+  async readStdin() {
+    for await (const chunk of process.stdin) {
+      this.onDataReceived(chunk)
+    }
+    console.log('End of stream')
   }
 
   sendMessage(message: Message): void {
@@ -98,14 +116,23 @@ export class NativeMessagingHost {
     try {
       const bufferObject = bufferToObject(data)
       const parsedData = convertJsonUint8ToObject(bufferObject || {})
-      sendDebugMessage('onDataReceived', parsedData?.progress)
+      // Validate message with zod
+
+      const message = MessageSchema.safeParse(parsedData)
+
+      if (!message.success) {
+        sendDebugMessage('error', JSON.stringify(message))
+        throw new Error(message.error.issues?.[0].message)
+      }
+
+      sendDebugMessage('buffer obj rec:', parsedData)
+      // sendDebugMessage('onDataReceived:', content)
       // const dataAsString = JSON.stringify(parsedData)
       // this.sendMessage({ type: 'text', progress: 1, data: dataAsString })
       // sendDebugMessage('onDataReceived:', JSON.stringify(bufferObject))
-
-      // this.listeners.forEach(listener => {
-      //   listener(parsedData)
-      // })
+      this.listeners.forEach(listener => {
+        listener(message.data)
+      })
     } catch (e) {
       // @ts-ignore
       sendDebugMessage('onDataReceived error', e?.message)

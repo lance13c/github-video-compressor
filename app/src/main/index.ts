@@ -2,17 +2,35 @@ import { app } from 'electron'
 
 // import { sendDebugMessage } from 'main/dev_websockets'
 import { sendDebugMessage } from 'main/dev_websockets'
+import { generateSecretKey } from 'shared/utils/crypto.util'
+import { startHttpFileServer } from 'shared/utils/httpFileServer'
 import { NativeMessagingHost } from 'shared/utils/nativeMessagingHost'
 import { makeAppWithSingleInstanceLock } from './factories'
 import { registerAboutWindowCreationByIPC } from './windows'
+
+const port = 7779
 
 makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
 
   try {
     const nativeMessagingHost = new NativeMessagingHost()
+    const httpServer = startHttpFileServer(port)
 
-    // nativeMessagingHost.addListener(parsedData => sendDebugMessage('nativeMessagingHostData', parsedData))
+    nativeMessagingHost.addListener(message => {
+      sendDebugMessage('debug', `Received message ${JSON.stringify(message)}`)
+      if (message.type === 'connection') {
+        sendDebugMessage('debug', 'Init connection - Received connection request')
+
+        const secret = generateSecretKey()
+
+        nativeMessagingHost.sendMessage({
+          type: 'connection',
+          progress: 1,
+          data: secret,
+        })
+      }
+    })
 
     sendDebugMessage('info', 'Electron app started - HELLO 3333')
 
@@ -43,6 +61,7 @@ makeAppWithSingleInstanceLock(async () => {
     process.stdin.on('end', () => {
       sendDebugMessage('info', 'stdin closed, shutting down Electron app')
       // clearInterval(sendInterval)
+      httpServer.close()
       app.quit()
     })
 

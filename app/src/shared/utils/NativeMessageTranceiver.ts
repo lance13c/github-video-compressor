@@ -1,10 +1,5 @@
 import { sendDebugMessage } from 'main/dev_websockets'
-
-type Message = {
-  type: 'text' | 'video/mp4' | 'video/mpeg' | 'video/ogg' | 'video/webm' | 'video/quicktime'
-  progress: number
-  data: string
-}
+import { Message } from 'shared/utils/zod.util'
 
 // Number between 0 and 1, a percentage of the total file size
 export type ProgressCallback = (formattedProgress: string, progress: number) => void

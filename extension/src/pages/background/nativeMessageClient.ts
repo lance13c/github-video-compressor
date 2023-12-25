@@ -1,14 +1,10 @@
+import type { Message } from "@root/src/util/zod.util";
+
 type Listener = (...args: unknown[]) => void;
 
-type Message = {
-  type: 'text' | 'video/mp4' | 'video/mpeg' | 'video/ogg' | 'video/webm' | 'video/quicktime',
-  progress: number, // 0-1
-  data: string, // Files will be in binary chunks
-}
-
-function delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+// function delay(ms: number): Promise<void> {
+//     return new Promise(resolve => setTimeout(resolve, ms));
+// }
 
 export class NativeMessagingClient {
   private port: chrome.runtime.Port;
@@ -20,7 +16,15 @@ export class NativeMessagingClient {
     try {
       console.log('appName', this.appName);
       this.port = chrome.runtime.connectNative(this.appName);
-
+      
+      setTimeout(() => {
+        this.sendMessage({
+          type: 'connection',
+          progress: 1,
+          data: '',
+        })
+      }, 4000)
+      
       this.port.onMessage.addListener(message => {
         console.log('on message:', message);
 

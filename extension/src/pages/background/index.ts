@@ -1,16 +1,22 @@
 import { BackgroundFileChunkReceiver } from '@root/src/pages/background/BackgroundFileChunkUtil';
 import { NativeMessageTransceiver } from '@root/src/pages/background/NativeMessageTranceiver';
 import { NativeMessagingClient } from '@root/src/pages/background/nativeMessageClient';
+import type { Client } from 'ssh2';
 import reloadOnUpdate from 'virtual:reload-on-update-in-background-script';
 import 'webextension-polyfill';
+
+let secret = '';
 
 const init = async () => {
   console.log('init');
   console.log('window.navigator.hardwareConcurrency', globalThis.navigator.hardwareConcurrency);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const client: Client | null = null;
+
   try {
     const nativeMessageClient = new NativeMessagingClient('com.dominic_cicilio.github_video_compressor');
     const nativeMessageTransceiver = new NativeMessageTransceiver({
-      chunkSizeOut: 1.6,
+      chunkSizeOut: 512,
     });
 
     const dataStream = nativeMessageTransceiver.createDataStream(nativeMessageClient.addListener)
@@ -19,8 +25,12 @@ const init = async () => {
       console.log('extension progress', progress, total);
     })
 
-    dataStream.onComplete((message) => {
+    dataStream.onComplete(async (message) => {
       console.log('extension complete', message);
+      if (message.type === 'connection') {
+        secret = message.data;
+        console.log('secret', secret)
+      }
     })
 
     new BackgroundFileChunkReceiver(async blob => {

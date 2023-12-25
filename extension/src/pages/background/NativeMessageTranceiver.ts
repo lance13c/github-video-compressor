@@ -1,6 +1,6 @@
 
 type Message = {
-  type: 'text' | 'video/mp4' | 'video/mpeg' | 'video/ogg' | 'video/webm' | 'video/quicktime'
+  type: 'text' | 'video/mp4' | 'video/mpeg' | 'video/ogg' | 'video/webm' | 'video/quicktime' | 'connection'
   progress: number
   data: string
 }
@@ -67,23 +67,25 @@ export class DataStream {
   }
 
   receiveData(message: Message) {
-    // const dataChunk = new Uint8Array(Buffer.from(message.data, 'binary'))
+    console.log("message", message);
+  //   const dataChunk = new Uint8Array(Buffer.from(message.data, 'binary'))
 
-    // this.receivedData.push(dataChunk)
-    // this.receivedSize += dataChunk.byteLength
-    // ('background received data', JSON.stringify(message))
+  //   this.receivedData.push(dataChunk)
+  //   this.receivedSize += dataChunk.byteLength
+  //   // sendDebugMessage('background received data', JSON.stringify(message))
 
-    // if (this.onProgressCallback) {
-    //   this.onProgressCallback(`${Math.floor(message.progress * 100) / 100}% Complete`, message.progress)
-    // }
+  //   if (this.onProgressCallback) {
+  //     this.onProgressCallback(`${Math.floor(message.progress * 100) / 100}% Complete`, message.progress)
+  //   }
 
-    // if (this.receivedSize >= this.totalSize && this.onCompleteCallback) {
-    //   const completeData = new Uint8Array(
-    //     this.receivedData.reduce((acc: number[], val: Uint8Array) => {
-    //       return acc.concat(Array.from(val))
-    //     }, [])
-    //   )
-    //   this.onCompleteCallback({ type: message.type, progress: 1, data: completeData.toString() })
-    // }
+  //   if (this.receivedSize >= this.totalSize && this.onCompleteCallback) {
+  //     const completeData = new Uint8Array(
+  //       this.receivedData.reduce((acc: number[], val: Uint8Array) => {
+  //         return acc.concat(Array.from(val))
+  //       }, [])
+  //     )
+  //     this.onCompleteCallback({ type: message.type, progress: 1, data: completeData.toString() })
+  //   }
+  // }
   }
 }
