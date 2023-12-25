@@ -3,7 +3,11 @@ import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import { sendDebugMessage } from 'main/dev_websockets'
 
-const validSecrets: string[] = []
+export const generateSecretKey = (length: number = 64): string => {
+  return randomBytes(length).toString('hex')
+}
+
+let secret = generateSecretKey()
 
 export const generateHostKey = () => {
   const keyPair = generateKeyPairSync('rsa', {
@@ -17,16 +21,10 @@ export const generateHostKey = () => {
 }
 
 interface TokenPayload {
-  clientId: number
+  clientId: string
 }
 
-export const generateSecretKey = (length: number = 64): string => {
-  const secret = randomBytes(length).toString('hex')
-  validSecrets.push(secret)
-  return secret
-}
-
-export const generateToken = (payload: TokenPayload, secret: string, expiresIn: string | number = '1h'): string => {
+export const generateToken = (payload: TokenPayload, expiresIn: string | number = '1h'): string => {
   return jwt.sign(payload, secret, { expiresIn })
 }
 
@@ -43,17 +41,18 @@ export const validateTokenMiddleware = (req: Request, res: Response, next: NextF
     const token = authHeader.split(' ')[1] // Assuming Bearer token format: "Bearer TOKEN"
 
     if (!token) {
-      return res.status(401).send('Token is missing')
+      sendDebugMessage('debug', 'Token is missing')
+      return res.status(400).json('')
     }
 
-    const verifiedToken = validSecrets.find(secret => !!jwt.verify(token, secret))
+    const verifiedToken = jwt.verify(token, secret)
     if (!verifiedToken) {
       sendDebugMessage('error', 'Invalid token')
       return res.status(400).json('')
     }
 
     // @ts-expect-error -- valid token
-    req.session = verifiedToken // Add the decoded token payload to the request object
+    req.token = verifiedToken // Add the decoded token payload to the request object
 
     next() // Proceed to the next middleware/function
   } catch (error) {

@@ -15,7 +15,7 @@ interface TokenPayload {
 declare global {
   namespace Express {
     interface Request {
-      client?: TokenPayload
+      clientId?: TokenPayload
     }
   }
 }
@@ -39,6 +39,8 @@ export const startHttpFileServer = (port: number = 7779) => {
     }
 
     sendDebugMessage('debug', req.file.originalname)
+    // @ts-expect-error -- valid message
+    sendDebugMessage('debug', req.file?.size())
     fs.move(req.file.path, path.join(__dirname, 'uploads', req.file.originalname), { overwrite: true })
       .then(() => res.json({ message: 'File uploaded successfully.' }))
       .catch(err => {

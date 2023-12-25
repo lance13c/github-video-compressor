@@ -2,9 +2,10 @@ import { app } from 'electron'
 
 // import { sendDebugMessage } from 'main/dev_websockets'
 import { sendDebugMessage } from 'main/dev_websockets'
-import { generateSecretKey } from 'shared/utils/crypto.util'
+import { generateToken } from 'shared/utils/crypto.util'
 import { startHttpFileServer } from 'shared/utils/httpFileServer'
 import { NativeMessagingHost } from 'shared/utils/nativeMessagingHost'
+import { v4 as uuidv4 } from 'uuid'
 import { makeAppWithSingleInstanceLock } from './factories'
 import { registerAboutWindowCreationByIPC } from './windows'
 
@@ -22,12 +23,15 @@ makeAppWithSingleInstanceLock(async () => {
       if (message.type === 'connection') {
         sendDebugMessage('debug', 'Init connection - Received connection request')
 
-        const secret = generateSecretKey()
+        const token = generateToken({
+          // generate random client uuid
+          clientId: uuidv4(),
+        })
 
         nativeMessagingHost.sendMessage({
           type: 'connection',
           progress: 1,
-          data: secret,
+          data: token,
         })
       }
     })
