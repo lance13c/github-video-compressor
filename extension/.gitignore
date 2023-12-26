@@ -11,6 +11,7 @@
 **/.DS_Store
 **/.env.local
 **/.idea
+**/app/launcher/dist/dev_mode_launcher/_internal
 
 # compiled
 **/utils/reload/*.js

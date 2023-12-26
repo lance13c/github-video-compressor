@@ -1,0 +1,37 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Build and Production
+/build
+/dist
+**/dist
+**/app/launcher/dist/dev_mode_launcher/_internal
+
+# Compiled Scripts
+**/utils/reload/*.js
+**/utils/reload/injections/*.js
+**/public/manifest.json
+
+# Environment and Configuration Files
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.eslintcache
+
+# IDE Specific
+**/.idea
+**/com.*
+
+# Internal and Miscellaneous
+**/_internal
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

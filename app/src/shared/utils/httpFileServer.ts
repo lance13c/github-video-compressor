@@ -12,6 +12,9 @@ import { fileURLToPath } from 'url'
 
 ffmpeg.setFfmpegPath('/opt/homebrew/bin/ffmpeg')
 
+const isDevelopment = process.argv.includes('--development')
+sendDebugMessage('debug', `isDevelopment: ${isDevelopment}`)
+
 interface TokenPayload {
   client: number
 }
@@ -25,12 +28,7 @@ declare global {
 }
 
 export const startHttpFileServer = (electronApp: Electron.App, port: number = 7779) => {
-  const documentsPath = electronApp.getPath('documents')
-  const filesPath = path.join(documentsPath, 'GithubVideoCompressor')
-  // Create file directory if it doesn't exist
-  if (!fs.existsSync(filesPath)) {
-    fs.mkdirSync(filesPath, { recursive: true })
-  }
+  const tempPath = electronApp.getPath('temp')
   // @ts-expect-error - import.meta.url is correct
   const __dirname = path.dirname(fileURLToPath(import.meta.url))
   sendDebugMessage('debug', `dirname: ${__dirname}`)
@@ -68,11 +66,21 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
     //   })
 
     const inputPath = req.file.path
+    sendDebugMessage('debug - input path', inputPath)
 
-    const outputPath = path.join(filesPath, 'uploads', req.file.originalname)
+    const outputFileName = req.file.originalname
+    const outputPath = path.join(tempPath, outputFileName)
+
     sendDebugMessage('debug', `outputPath: ${outputPath}`)
+    // Save the file locally
+    // const inputPath = `${filesPath}/${req.file.originalname}`
+    // fs.writeFileSync(inputPath, req.file.buffer)
+
+    // check if file exists
+    sendDebugMessage('debug', `inputPath exists: ${fs.existsSync(inputPath)}`)
 
     ffmpeg(inputPath)
+      .noAudio()
       .output(outputPath)
       .on('start', commandLine => {
         sendDebugMessage('debug', 'Spawned FFmpeg with command: ' + commandLine)
@@ -86,8 +94,26 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
       })
       .on('end', () => {
         sendDebugMessage('debug', 'Processing finished !')
-        // File processing finished, send the file
-        return res.status(200).json({ message: 'File uploaded successfully.' })
+        const outputFileExists = fs.existsSync(outputPath)
+
+        sendDebugMessage('debug - output file exists', `${outputFileExists}`)
+        if (outputFileExists) {
+          // File processing finished, send the file
+          // Download output file
+
+          return res.download(outputPath, outputFileName, err => {
+            if (err) {
+              sendDebugMessage('debug', err?.message)
+              return res.status(500).json({ message: 'Error processing file' })
+            }
+
+            // Delete files from temp directory
+            fs.unlinkSync(inputPath)
+            fs.unlinkSync(outputPath)
+          })
+        } else {
+          return res.status(500).json({ message: 'Error processing file' })
+        }
       })
       .run()
   })

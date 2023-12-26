@@ -2,6 +2,7 @@
 
 import atexit
 import json
+import os
 import queue
 import random
 import struct
@@ -122,7 +123,8 @@ def cleanup():
       proc.stdin.close()
       proc.terminate()
       proc.wait()
-   
+
+
 
 # Start Electron subprocess
 def start_subprocess(ws):
@@ -130,12 +132,20 @@ def start_subprocess(ws):
     global proc
     electron_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
     main_script_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/.dev/main/index.js"
+    current_directory = os.path.dirname(os.path.realpath(__file__))
+
+    # Set environment variables for the subprocess
+    env = os.environ.copy()
+    env['NODE_ENV'] = 'development'
+
     # Start Electron subprocess
-    proc = subprocess.Popen([electron_path, main_script_path],
+    proc = subprocess.Popen([electron_path, main_script_path, '--development'],
                         stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
-                        bufsize=0)
+                        bufsize=0,
+                        cwd=current_directory,
+                        env=env)
 
     # Start threads to relay data
     threading.Thread(target=run_is_alive, args=(ws, client_id), daemon=True).start()
