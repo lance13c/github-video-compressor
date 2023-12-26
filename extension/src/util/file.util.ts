@@ -1,6 +1,8 @@
 import { getToken } from "@root/src/pages/background/tokenManager";
 
-export async function sendFileToServer(file: File, port: number = 7777): Promise<Response> {
+export async function sendFileToServer(file: File, port: number = 7777): Promise<{
+  file?: File
+}> {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -16,9 +18,22 @@ export async function sendFileToServer(file: File, port: number = 7777): Promise
     body: formData // Send the file in a FormData object
   });
 
-  console.log("file sent:", response);
+  if (response.ok) {
+    const blob = await response.blob();
 
-  return response;
+    return {
+      file: new File([blob], file.name, {
+        type: file.type
+      })
+    }
+  } else {
+    // Handle error
+    console.error("File upload failed:", response.statusText);
+  } 
+
+  return {
+    file: undefined
+  }
 }
 
 export const pingTest = async (port: number = 7777): Promise<Response> => {

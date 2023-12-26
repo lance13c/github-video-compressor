@@ -2,6 +2,8 @@
 //   const url = URL.createObjectURL(blob);
 //   const a = document.createElement('a');
 
+import { FileChunkReceiver } from '@root/src/pages/content/ContentFileChunkUtil';
+
 //   a.href = url;
 //   a.download = fileName; // Name of the downloaded file
 //   document.body.appendChild(a);
@@ -60,53 +62,54 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
 
   // Send file to background.js to be compressed
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const sendFileToBeCompressed = (file: File, options: Record<string, string> = {}) => {
+  const sendFileToBeCompressed = async (file: File, options: Record<string, string> = {}) => {
     console.log('hit compress', file);
     try {
       return sender.sendFile(file);
     } catch (err) {
       console.error(err);
+      return false;
     }
   };
 
-  // new FileChunkReceiver(({ blob, progress }) => {
-  //   console.log('response', blob, progress);
+  new FileChunkReceiver(({ blob, progress }) => {
+    console.log('response', blob, progress);
 
-  //   if (blob) {
-  //     const fileName = `video.${blob.type.split('/')[1]}`;
-  //     const file = new File([blob], fileName, { type: blob.type });
-  //     console.log('fileName', fileName);
+    if (blob) {
+      const fileName = `video.${blob.type.split('/')[1]}`;
+      const file = new File([blob], fileName, { type: blob.type });
+      console.log('fileName', fileName);
 
-  //     githubUploader
-  //       .startImageUpload({
-  //         imageName: file.name,
-  //         imageSize: file.size,
-  //         authenticity_token,
-  //         content_type: file.type,
-  //         repository_id: '720251838',
-  //         file,
-  //         imageUploadCompleteCallback: () => {
-  //           console.log('Upload complete');
-  //         },
-  //       })
-  //       .then(imageResponse => {
-  //         console.log('imageResponse', imageResponse);
-  //         if (!imageResponse) {
-  //           throw new Error('imageResponse is invalid');
-  //         }
+      githubUploader
+        .startImageUpload({
+          imageName: file.name,
+          imageSize: file.size,
+          authenticity_token,
+          content_type: file.type,
+          repository_id: '720251838',
+          file,
+          imageUploadCompleteCallback: () => {
+            console.log('Upload complete');
+          },
+        })
+        .then(imageResponse => {
+          console.log('imageResponse', imageResponse);
+          if (!imageResponse) {
+            throw new Error('imageResponse is invalid');
+          }
 
-  //         if (!textAreaElement) {
-  //           window.alert(
-  //             `The github compression extension does not know where to place the file. Please copy and paste the following link into the textarea instead.\n\nLink: [${file.name}](${imageResponse.href})`,
-  //           );
-  //           throw new Error('textAreaElement not found');
-  //         }
+          if (!textAreaElement) {
+            window.alert(
+              `The github compression extension does not know where to place the file. Please copy and paste the following link into the textarea instead.\n\nLink: [${file.name}](${imageResponse.href})`,
+            );
+            throw new Error('textAreaElement not found');
+          }
 
-  //         injectMarkdownLink(textAreaElement, file.name, imageResponse.href);
-  //         console.debug('success');
-  //       });
-  //   }
-  // });
+          injectMarkdownLink(textAreaElement, file.name, imageResponse.href);
+          console.debug('success');
+        });
+    }
+  });
 
   // // Function to add drag-and-drop event listeners to a textarea
   // const addDragAndDropListeners = (textarea: HTMLTextAreaElement) => {
@@ -176,8 +179,10 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
             e.preventDefault();
 
             sendFileToBeCompressed(file)
-              .then(response => {
-                console.log('finish compressed video', response);
+              .then(compressedFile => {
+                // @ts-expect-error -- it works
+                console.log('finish compressed video', compressedFile?.fileName);
+
               })
               .catch(err => {
                 console.log('err', err);

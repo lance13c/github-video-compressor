@@ -2,6 +2,7 @@ import { BackgroundFileChunkReceiver } from '@root/src/pages/background/Backgrou
 import { NativeMessageTransceiver } from '@root/src/pages/background/NativeMessageTransceiver';
 import { NativeMessagingClient } from '@root/src/pages/background/nativeMessageClient';
 import { setToken } from '@root/src/pages/background/tokenManager';
+import { FileChunkSender } from '@root/src/pages/content/ContentFileChunkUtil';
 import { pingTest, sendFileToServer } from '@root/src/util/file.util';
 // import { sendFileToServer } from '@root/src/util/file.util';
 import reloadOnUpdate from 'virtual:reload-on-update-in-background-script';
@@ -17,6 +18,7 @@ const init = async () => {
     const nativeMessageTransceiver = new NativeMessageTransceiver({
       chunkSizeOut: 512,
     });
+    const fileChunkSender = new FileChunkSender();
 
     const dataStream = nativeMessageTransceiver.createDataStream(nativeMessageClient.addListener)
 
@@ -59,11 +61,11 @@ const init = async () => {
         //   nativeMessageClient.sendMessage(message);
         // }, 0)
 
-        await sendFileToServer(file)
+        const {file: compressedFile} = await sendFileToServer(file)
 
-        console.log('message sent complete');
+        console.log('message sent complete:', compressedFile?.name);
 
-        // await fileChunkSender.sendFile({ data: output, tabId, fileType: 'video/mp4' });
+        await fileChunkSender.sendFile(compressedFile);
       }
     });
   } catch (err) {
