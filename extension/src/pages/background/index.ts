@@ -1,8 +1,7 @@
-import { BackgroundFileChunkReceiver } from '@root/src/pages/background/BackgroundFileChunkUtil';
+import { BackgroundFileChunkReceiver, BackgroundFileChunkSender } from '@root/src/pages/background/BackgroundFileChunkUtil';
 import { NativeMessageTransceiver } from '@root/src/pages/background/NativeMessageTransceiver';
 import { NativeMessagingClient } from '@root/src/pages/background/nativeMessageClient';
 import { setToken } from '@root/src/pages/background/tokenManager';
-import { FileChunkSender } from '@root/src/pages/content/ContentFileChunkUtil';
 import { pingTest, sendFileToServer } from '@root/src/util/file.util';
 // import { sendFileToServer } from '@root/src/util/file.util';
 import reloadOnUpdate from 'virtual:reload-on-update-in-background-script';
@@ -18,7 +17,7 @@ const init = async () => {
     const nativeMessageTransceiver = new NativeMessageTransceiver({
       chunkSizeOut: 512,
     });
-    const fileChunkSender = new FileChunkSender();
+    const fileChunkSender = new BackgroundFileChunkSender();
 
     const dataStream = nativeMessageTransceiver.createDataStream(nativeMessageClient.addListener)
 
@@ -37,7 +36,7 @@ const init = async () => {
       }
     })
 
-    new BackgroundFileChunkReceiver(async blob => {
+    new BackgroundFileChunkReceiver(async (blob, tabId) => {
       console.log('hit background file receiver');
 
       if (blob) {
@@ -46,26 +45,20 @@ const init = async () => {
         const fileName = `video.${fileExtension}`;
         const file = new File([blob], fileName, { type: blob.type });
 
-        // console.log('background file name', fileName)
-        // nativeMessageClient.sendMessage({
-        //   progress: 1,
-        //   type: 'text',
-        //   data: 'fileName:' + fileName
-        // });
-
-        // const fileAsUint8 = new Uint8Array((await blob.arrayBuffer()));
-
-        // nativeMessageTransceiver.send(fileAsUint8, 'video/mp4', async (message) => {
-        //   console.log('sending data', message);
-        //   console.log('byte length',new Blob([JSON.stringify(message)]).size);
-        //   nativeMessageClient.sendMessage(message);
-        // }, 0)
 
         const {file: compressedFile} = await sendFileToServer(file)
 
         console.log('message sent complete:', compressedFile?.name);
 
-        await fileChunkSender.sendFile(compressedFile);
+        // convert file to uint8 array
+        const compressedFileData = await compressedFile.arrayBuffer()
+        const uint8ArrayCompressedFileData = new Uint8Array(compressedFileData);
+
+        await fileChunkSender.sendFile({
+          data: uint8ArrayCompressedFileData,
+          fileType: compressedFile.type,
+          tabId
+        });
       }
     });
   } catch (err) {

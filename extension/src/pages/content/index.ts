@@ -2,7 +2,6 @@
 //   const url = URL.createObjectURL(blob);
 //   const a = document.createElement('a');
 
-import { FileChunkReceiver } from '@root/src/pages/content/ContentFileChunkUtil';
 
 //   a.href = url;
 //   a.download = fileName; // Name of the downloaded file
@@ -42,6 +41,7 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
+  const { FileChunkReceiver } = await import('@root/src/pages/content/ContentFileChunkUtil')
   const { FileChunkSender } = await import('@root/src/pages/content/ContentFileChunkUtil');
   const { GithubUploader } = await import('@root/src/pages/background/GithubUploader');
   const githubUploader = new GithubUploader();

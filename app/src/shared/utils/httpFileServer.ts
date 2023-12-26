@@ -35,7 +35,21 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
   const app: Express = express()
   app.use(cors())
 
-  const upload = multer({ dest: 'uploads/' }) // Configure Multer as needed
+  // Set up Multer to store files with original extensions
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads/') // Destination folder
+    },
+    filename: function (req, file, cb) {
+      const fileName = req.file?.filename
+      sendDebugMessage('debug - req file name', `${fileName}`)
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+      sendDebugMessage('debug - file name', file.originalname)
+      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname)) // Preserve the file extension
+    },
+  })
+
+  const upload = multer({ storage }) // Configure Multer as needed
 
   // Middleware
   app.use(bodyParser.json())
@@ -81,6 +95,8 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
 
     ffmpeg(inputPath)
       .noAudio()
+      .videoCodec('libx264')
+      .addOptions(['-crf 28', '-preset ultrafast', '-vf', 'scale=-1:720'])
       .output(outputPath)
       .on('start', commandLine => {
         sendDebugMessage('debug', 'Spawned FFmpeg with command: ' + commandLine)
@@ -101,7 +117,7 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
           // File processing finished, send the file
           // Download output file
 
-          return res.download(outputPath, outputFileName, err => {
+          return res.status(200).download(outputPath, outputFileName, err => {
             if (err) {
               sendDebugMessage('debug', err?.message)
               return res.status(500).json({ message: 'Error processing file' })

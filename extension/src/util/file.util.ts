@@ -18,11 +18,14 @@ export async function sendFileToServer(file: File, port: number = 7777): Promise
     body: formData // Send the file in a FormData object
   });
 
+  console.log("send file res", response);
+
   if (response.ok) {
     const blob = await response.blob();
+    console.log("output blob size", blob.size);
 
     return {
-      file: new File([blob], file.name, {
+      file: new File([blob], `output-${file.name}`, {
         type: file.type
       })
     }
