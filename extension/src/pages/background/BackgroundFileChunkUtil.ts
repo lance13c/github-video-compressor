@@ -36,7 +36,6 @@ export class BackgroundFileChunkSender {
   }): Promise<boolean> {
     return new Promise((resolve, reject) => {
       const chunkBase64 = uint8ArrayToBase64(chunk);
-      console.log('chunkBase64', chunkBase64);
       const fileChunkMessage: FileChunkMessage = {
         id,
         type: 'fileChunk',

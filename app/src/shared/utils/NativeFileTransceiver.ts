@@ -75,7 +75,6 @@ export class NativeFileTransceiver {
     return new Promise((resolve, reject) => {
       try {
         const chunkBase64 = uint8ArrayToBase64(chunk)
-        console.log('chunkBase64', chunkBase64)
         const fileChunkMessage: FileChunkMessage = {
           type: 'fileChunk',
           chunk: chunkBase64,
