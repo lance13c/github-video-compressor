@@ -94,6 +94,7 @@ export class FileChunkSender {
         progress: end / fileSize,
         fileType: file.type,
         isComplete: end >= fileSize,
+        // @ts-expect-error -- window is valid global
         url: window.location.href,
       };
 

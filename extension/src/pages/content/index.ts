@@ -38,6 +38,29 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
   textArea.focus();
 }
 
+const getRepositoryId = () => {
+
+  // @ts-expect-error -- document is valid repository id
+  const repository_id = document
+    .querySelector('meta[name="octolytics-dimension-repository_id"]')
+    ?.getAttribute('content');
+  if (!repository_id) {
+    throw new Error('repository_id not found');
+  }
+
+  return repository_id;
+}
+
+const getAuthenticityToken = () => {
+  // @ts-expect-error -- document is valid repository id
+  const authenticity_token = document.querySelector('.js-data-upload-policy-url-csrf')?.getAttribute('value');
+  if (!authenticity_token) {
+    throw new Error('authenticity_token not found');
+  }
+
+  return authenticity_token;
+}
+
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
@@ -48,17 +71,9 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
   const sender = new FileChunkSender();
   let textAreaElement: HTMLTextAreaElement;
 
-  const authenticity_token = document.querySelector('.js-data-upload-policy-url-csrf')?.getAttribute('value');
-  if (!authenticity_token) {
-    throw new Error('authenticity_token not found');
-  }
+  
 
-  const repository_id = document
-    .querySelector('meta[name="octolytics-dimension-repository_id"]')
-    ?.getAttribute('content');
-  if (!repository_id) {
-    throw new Error('repository_id not found');
-  }
+  
 
   // Send file to background.js to be compressed
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -80,13 +95,16 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
       const file = new File([blob], fileName, { type: blob.type });
       console.log('fileName', fileName);
 
+      const repository_id = getRepositoryId();
+      const authenticity_token = getAuthenticityToken();
+
       githubUploader
         .startImageUpload({
           imageName: file.name,
           imageSize: file.size,
           authenticity_token,
           content_type: file.type,
-          repository_id: '720251838',
+          repository_id,
           file,
           imageUploadCompleteCallback: () => {
             console.log('Upload complete');
@@ -179,10 +197,8 @@ function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: s
             e.preventDefault();
 
             sendFileToBeCompressed(file)
-              .then(compressedFile => {
-                // @ts-expect-error -- it works
-                console.log('finish compressed video', compressedFile?.fileName);
-
+              .then(() => {
+                console.log('finish compressed video');
               })
               .catch(err => {
                 console.log('err', err);
