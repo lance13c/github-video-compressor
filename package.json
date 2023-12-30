@@ -1,0 +1,8 @@
+{
+  "name": "github_video_compressor",
+  "private": true,
+  "workspaces": [
+    "app",
+    "extension"
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "displayName": "GithubVideoCompressor",
-  "name": "github_video_compressor",
+  "name": "github_video_compressor_app",
   "description": "A seamless local video compressing solution when upload videos to Github",
   "version": "0.0.1",
   "main": "./node_modules/.dev/main/index.js",

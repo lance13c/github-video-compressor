@@ -1,5 +1,5 @@
 {
-  "name": "github_video_compressor",
+  "name": "github_video_compressor_extension",
   "displayName": "GithubVideoCompressor",
   "version": "0.0.1",
   "description": "Seamlessly compresses video files in the Github UI before uploading",
