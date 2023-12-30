@@ -64,67 +64,17 @@ const getAuthenticityToken = () => {
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
-  const { FileChunkReceiver, FileChunkSender } = await import('@root/src/pages/content/ContentFileChunkUtil')
+  const { compressFile } = await import('@root/src/pages/content/FileTransceiver')
   const { GithubUploader } = await import('@root/src/pages/background/GithubUploader');
   const githubUploader = new GithubUploader();
-  const sender = new FileChunkSender();
-  let textAreaElement: HTMLTextAreaElement;
 
-  
 
-  // Send file to background.js to be compressed
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const sendFileToBeCompressed = async (file: File, options: Record<string, string> = {}) => {
-    console.log('hit compress', file);
-    try {
-      return sender.sendFile(file);
-    } catch (err) {
-      console.error(err);
-      return false;
-    }
-  };
 
-  new FileChunkReceiver(({ blob, progress }) => {
-    console.log('response', blob, progress);
+  // new FileChunkReceiver(({ blob, progress }) => {
+  //   console.log('response', blob, progress);
 
-    if (blob) {
-      const fileName = `video.${blob.type.split('/')[1]}`;
-      const file = new File([blob], fileName, { type: blob.type });
-      console.log('fileName', fileName);
-
-      const repository_id = getRepositoryId();
-      const authenticity_token = getAuthenticityToken();
-
-      githubUploader
-        .startImageUpload({
-          imageName: file.name,
-          imageSize: file.size,
-          authenticity_token,
-          content_type: file.type,
-          repository_id,
-          file,
-          imageUploadCompleteCallback: () => {
-            console.log('Upload complete');
-          },
-        })
-        .then(imageResponse => {
-          console.log('imageResponse', imageResponse);
-          if (!imageResponse) {
-            throw new Error('imageResponse is invalid');
-          }
-
-          if (!textAreaElement) {
-            window.alert(
-              `The github compression extension does not know where to place the file. Please copy and paste the following link into the textarea instead.\n\nLink: [${file.name}](${imageResponse.href})`,
-            );
-            throw new Error('textAreaElement not found');
-          }
-
-          injectMarkdownLink(textAreaElement, file.name, imageResponse.href);
-          console.debug('success');
-        });
-    }
-  });
+    
+  // });
 
 
 // Inject the responding image into the correct textarea element.
@@ -162,6 +112,50 @@ const getAuthenticityToken = () => {
   //   });
   // };
 
+
+
+  const uploadFile = (textAreaElement: HTMLElement, blob: Blob, fileName: string) => {
+    if (blob) {
+      const file = new File([blob], fileName, { type: blob.type });
+      console.log('fileName', fileName);
+
+      const repository_id = getRepositoryId();
+      const authenticity_token = getAuthenticityToken();
+
+      githubUploader
+        .startImageUpload({
+          imageName: file.name,
+          imageSize: file.size,
+          authenticity_token,
+          content_type: file.type,
+          repository_id,
+          file,
+          imageUploadCompleteCallback: () => {
+            console.log('Upload complete');
+          },
+        })
+        .then(imageResponse => {
+          console.log('imageResponse', imageResponse);
+          if (!imageResponse) {
+            throw new Error('imageResponse is invalid');
+          }
+
+          if (!textAreaElement) {
+            // @ts-expect-error -- window is allowed
+            window.alert(
+              `The github compression extension does not know where to place the file. Please copy and paste the following link into the textarea instead.\n\nLink: [${file.name}](${imageResponse.href})`,
+            );
+            throw new Error('textAreaElement not found');
+          }
+
+          injectMarkdownLink(textAreaElement, file.name, imageResponse.href);
+          console.debug('success');
+        });
+    }
+  }
+
+
+
   const fileInputs = document.querySelectorAll('input[type=file]');
   console.log("fileInputs", fileInputs);
   // > 100Mb
@@ -177,17 +171,18 @@ const getAuthenticityToken = () => {
 
       if (target && target.type === 'file') {
         // const fileAttachmentInputName = (e.target as HTMLInputElement).getAttribute('id');
-        textAreaElement = document.querySelector(`.js-upload-markdown-image textarea`) as HTMLTextAreaElement;
+        const textAreaElement = document.querySelector(`.js-upload-markdown-image textarea`) as HTMLTextAreaElement;
         // console.log('textArea', textAreaElement);
 
         if (!textAreaElement) {
           throw new Error('textAreaElement not found');
         }
 
+        // @ts-expect-error -- files allowed
         const files = target.files as unknown as File[];
 
         // Iterate over the FileList
-        for (const file in files) {
+        for (const file of files) {
           if (file.type)
           // const file = files[i];
           // if (file.size > TRIGGER_SIZE) {
@@ -199,9 +194,13 @@ const getAuthenticityToken = () => {
             e.stopPropagation();
             e.preventDefault();
 
-            sendFileToBeCompressed(file)
-              .then(() => {
+
+            compressFile(file, (progress) => {
+              console.log('Progress', progress);
+            })
+              .then((message) => {
                 console.log('finish compressed video');
+                uploadFile(textAreaElement, message.blob, message.fileName)
               })
               .catch(err => {
                 console.log('err', err);

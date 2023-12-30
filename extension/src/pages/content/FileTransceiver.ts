@@ -41,6 +41,11 @@ const createListener = (listener: Listener, options: ReceivingOptions = {
 
       fileChunks.push(chunkUint8);
 
+      listener({
+        progress: fileChunkMessage.progress,
+        isComplete: false,
+      }, close)
+
       if (fileChunkMessage.isComplete) {
         console.log('fileChunks', options.chunkSize);
 
@@ -126,13 +131,16 @@ export const sendFile = async (file: File, options: SendingOptions = {
     }
   }
 
-export const compressFile = async (file: File) => new Promise<Message>((resolve, reject) => {
+export const compressFile = async (file: File, onProgress: (progress: number) => void) => new Promise<Message>((resolve, reject) => {
     try {
 
   
     createListener((message, close) => {
-      resolve(message)
-      close();
+      onProgress(message.progress);
+      if (message.isComplete) {
+        resolve(message)
+        close();
+      }
     });
     
 
