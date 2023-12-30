@@ -102,16 +102,18 @@ export class BackgroundFileChunkReceiver {
   private fileChunks: Uint8Array[] = [];
   private fileType: string = '';
   private totalReceived: number = 0;
-  private listener: (blob: Blob, tabId: number) => Promise<void>;
+  private listener: (blob: Blob, tabId: number, messageId: string) => Promise<void>;
   private tabId: number = -1;
+  private messageId: string;
   private url: string = '';
 
-  constructor(listener: (blob: Blob, tabId: number) => Promise<void>) {
+  constructor(listener: (blob: Blob, tabId: number, messageId: string) => Promise<void>) {
     this.listener = listener;
     chrome.runtime.onMessage.addListener((message: FileChunkMessage, sender) => {
       this.url = message.url;
       if (message.type === 'fileChunk') {
         this.tabId = sender.tab?.id;
+        this.messageId = message.id,
         this.handleFileChunk(message);
       }
     });
@@ -135,6 +137,6 @@ export class BackgroundFileChunkReceiver {
     const test_repo = this.url.split('/').slice(-2).join('/');
     console.log('test_repo', test_repo);
 
-    this.listener(completeFile, this.tabId);
+    this.listener(completeFile, this.tabId, this.messageId);
   }
 }

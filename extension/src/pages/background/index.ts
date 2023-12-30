@@ -36,7 +36,7 @@ const init = async () => {
       }
     })
 
-    new BackgroundFileChunkReceiver(async (blob, tabId) => {
+    new BackgroundFileChunkReceiver(async (blob, tabId, messageId) => {
       console.log('hit background file receiver');
 
       if (blob) {
@@ -55,6 +55,7 @@ const init = async () => {
         const uint8ArrayCompressedFileData = new Uint8Array(compressedFileData);
 
         await fileChunkSender.sendFile({
+          id: messageId,
           data: uint8ArrayCompressedFileData,
           fileType: compressedFile.type,
           tabId
