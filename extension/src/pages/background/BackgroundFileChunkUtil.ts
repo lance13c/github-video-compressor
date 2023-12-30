@@ -3,6 +3,7 @@
 import { base64ToUint8Array, uint8ArrayToBase64 } from '@root/src/pages/background/binaryHelpers';
 
 export type FileChunkMessage = {
+  id: string;
   type: 'fileChunk';
   chunk: string; // base64 encoded file chunk;
   fileType: string;
@@ -19,12 +20,14 @@ export class BackgroundFileChunkSender {
   }
 
   private async sendChunk({
+    id,
     chunk,
     tabId,
     fileType,
     progress,
     isComplete,
   }: {
+    id,
     chunk: Uint8Array;
     tabId: number;
     fileType: string;
@@ -35,6 +38,7 @@ export class BackgroundFileChunkSender {
       const chunkBase64 = uint8ArrayToBase64(chunk);
       console.log('chunkBase64', chunkBase64);
       const fileChunkMessage: FileChunkMessage = {
+        id,
         type: 'fileChunk',
         chunk: chunkBase64,
         progress,
@@ -53,16 +57,16 @@ export class BackgroundFileChunkSender {
   }
 
   public async sendFile({
+    id,
     data,
     tabId,
     fileType,
   }: {
+    id: string;
     data: Uint8Array;
     tabId?: number;
     fileType: string;
   }): Promise<void> {
-    console.log('hit send file');
-
     const totalChunks = Math.ceil(data.byteLength / this.chunkSize);
 
     for (let index = 0; index < totalChunks; index++) {
@@ -87,7 +91,7 @@ export class BackgroundFileChunkSender {
       const progress = end / data.byteLength;
 
       // Convert chunk to Uint8Array and send
-      this.sendChunk({ chunk, tabId, fileType, progress, isComplete });
+      this.sendChunk({id, chunk, tabId, fileType, progress, isComplete });
     }
 
     console.log('Last chunk sent: ', totalChunks);

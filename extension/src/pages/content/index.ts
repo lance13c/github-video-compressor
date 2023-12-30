@@ -64,14 +64,11 @@ const getAuthenticityToken = () => {
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
-  const { FileChunkReceiver } = await import('@root/src/pages/content/ContentFileChunkUtil')
-  const { FileChunkSender } = await import('@root/src/pages/content/ContentFileChunkUtil');
+  const { FileChunkReceiver, FileChunkSender } = await import('@root/src/pages/content/ContentFileChunkUtil')
   const { GithubUploader } = await import('@root/src/pages/background/GithubUploader');
   const githubUploader = new GithubUploader();
   const sender = new FileChunkSender();
   let textAreaElement: HTMLTextAreaElement;
-
-  
 
   
 
@@ -129,6 +126,10 @@ const getAuthenticityToken = () => {
     }
   });
 
+
+// Inject the responding image into the correct textarea element.
+// This would be easiest if done with await messages, so the textarea is grabbed local to the element.
+
   // // Function to add drag-and-drop event listeners to a textarea
   // const addDragAndDropListeners = (textarea: HTMLTextAreaElement) => {
   //   // Prevent the default behavior for dragover
@@ -162,6 +163,7 @@ const getAuthenticityToken = () => {
   // };
 
   const fileInputs = document.querySelectorAll('input[type=file]');
+  console.log("fileInputs", fileInputs);
   // > 100Mb
   // const TRIGGER_SIZE = 99 * 1024 * 1024;
 
@@ -182,11 +184,12 @@ const getAuthenticityToken = () => {
           throw new Error('textAreaElement not found');
         }
 
-        const files = target.files;
+        const files = target.files as unknown as File[];
 
         // Iterate over the FileList
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
+        for (const file in files) {
+          if (file.type)
+          // const file = files[i];
           // if (file.size > TRIGGER_SIZE) {
           e.stopPropagation();
           e.preventDefault();
@@ -209,3 +212,10 @@ const getAuthenticityToken = () => {
     });
   });
 })();
+
+
+// 1. Sync text areas with the file to upload
+// 2. Send file type information, so the correct file type is saved.
+
+// Sending a file could be async, currently it is not. 
+// It would make it easier if the function could be pure.
