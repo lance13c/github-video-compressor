@@ -1,8 +1,8 @@
 // FileChunkSender.ts
 
-import { ChunkBundler } from 'utils/ChunkBundler'
-import { NativeMessagingHost } from 'utils/nativeMessagingHost'
+import { ChunkBundler } from './ChunkBundler'
 import { uint8ArrayToBase64 } from './binaryHelpers'
+import { NativeMessagingHost } from './nativeMessagingHost'
 
 export type FileChunkMessage = {
   type: 'fileChunk'
@@ -30,28 +30,21 @@ export class NativeFileTransceiver {
     this.chunkSize = Math.floor(chunkSize) // Default to 0.9MB , the max size for native messaging to client is 1Mb
     this.nativeMessagingHost = nativeMessageHost
     this.nativeMessagingHost.addListener(data => {
-      const internalData = data as {
-        chunk: Uint8Array
-        isFirst: boolean
-      }
-      const chunk = data?.chunk as Uint8Array
-      const isFirst = data?.isFirst
-
-      if (!chunk) {
-        // Do nothing when not a chunk.
-        return
-      }
-
+      // const internalData = data
+      // const chunk = data?.chunk as Uint8Array
+      // const isFirst = data?.isFirst
+      // if (!chunk) {
+      //   // Do nothing when not a chunk.
+      //   return
+      // }
       // if (isFirst) {
       //   // Get total size one first load.
       //   this.chunkBundler = new ChunkBundler(20)
       //   this.chunkBundler.addFileChunk(data)
       // }
-
       // if (!!this.chunkBundler) {
       //   this.chunkBundler.addFileChunk(data)
       // }
-
       // if ()
       // // Send data back to client in chunks
       // this.sendFile({
@@ -83,7 +76,7 @@ export class NativeFileTransceiver {
           isComplete,
         }
 
-        this.nativeMessagingHost.sendMessage(fileChunkMessage)
+        // this.nativeMessagingHost.sendMessage(fileChunkMessage)
         resolve(true)
       } catch (e) {
         reject(e)

@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": [
     "app",
-    "extension"
+    "extension",
+    "shared"
   ]
 }

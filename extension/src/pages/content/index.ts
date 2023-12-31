@@ -1,46 +1,24 @@
-// const downloadBlob = (blob: Blob, fileName: string) => {
-//   const url = URL.createObjectURL(blob);
-//   const a = document.createElement('a');
-
-
-//   a.href = url;
-//   a.download = fileName; // Name of the downloaded file
-//   document.body.appendChild(a);
-//   a.click();
-
-//   // Cleanup: revoke the object URL and remove the anchor element
-//   URL.revokeObjectURL(url);
-//   a.remove();
-// };
-
 function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: string): void {
   const markdownLink = `\n\n[${name}](${href})\n\n`;
 
   // Check if the browser supports `selectionStart` and `selectionEnd`
-  if ('selectionStart' in textArea && 'selectionEnd' in textArea) {
-    const startPos = textArea.selectionStart;
-    const endPos = textArea.selectionEnd;
-    const beforeText = textArea.value.substring(0, startPos);
-    const afterText = textArea.value.substring(endPos);
 
-    // Insert the markdown link where the cursor is, or at the end if no selection
-    textArea.value = beforeText + markdownLink + afterText;
+  const startPos = textArea.selectionStart;
+  const endPos = textArea.selectionEnd;
+  const beforeText = textArea.value.substring(0, startPos);
+  const afterText = textArea.value.substring(endPos);
 
-    // Move the cursor to the end of the new link
-    textArea.selectionStart = textArea.selectionEnd = startPos + markdownLink.length;
-  } else {
-    // For older browsers, just append at the end
-    // @ts-expect-error -- for older browsers
-    textArea.value += markdownLink;
-  }
+  // Insert the markdown link where the cursor is, or at the end if no selection
+  textArea.value = beforeText + markdownLink + afterText;
+
+  // Move the cursor to the end of the new link
+  textArea.selectionStart = textArea.selectionEnd = startPos + markdownLink.length;
 
   // Optionally, focus the textarea
   textArea.focus();
 }
 
 const getRepositoryId = () => {
-
-  // @ts-expect-error -- document is valid repository id
   const repository_id = document
     .querySelector('meta[name="octolytics-dimension-repository_id"]')
     ?.getAttribute('content');
@@ -49,36 +27,31 @@ const getRepositoryId = () => {
   }
 
   return repository_id;
-}
+};
 
 const getAuthenticityToken = () => {
-  // @ts-expect-error -- document is valid repository id
   const authenticity_token = document.querySelector('.js-data-upload-policy-url-csrf')?.getAttribute('value');
   if (!authenticity_token) {
     throw new Error('authenticity_token not found');
   }
 
   return authenticity_token;
-}
+};
 
 (async () => {
   await import('@pages/content/ui');
   await import('@pages/content/injected');
-  const { compressFile } = await import('@root/src/pages/content/FileTransceiver')
-  const { GithubUploader } = await import('@root/src/pages/background/GithubUploader');
+  const { compressFile } = await import('@pages/content/FileTransceiver');
+  const { GithubUploader } = await import('@pages/content/GithubUploader');
   const githubUploader = new GithubUploader();
-
-
 
   // new FileChunkReceiver(({ blob, progress }) => {
   //   console.log('response', blob, progress);
 
-    
   // });
 
-
-// Inject the responding image into the correct textarea element.
-// This would be easiest if done with await messages, so the textarea is grabbed local to the element.
+  // Inject the responding image into the correct textarea element.
+  // This would be easiest if done with await messages, so the textarea is grabbed local to the element.
 
   // // Function to add drag-and-drop event listeners to a textarea
   // const addDragAndDropListeners = (textarea: HTMLTextAreaElement) => {
@@ -112,9 +85,7 @@ const getAuthenticityToken = () => {
   //   });
   // };
 
-
-
-  const uploadFile = (textAreaElement: HTMLElement, blob: Blob, fileName: string) => {
+  const uploadFile = (textAreaElement: HTMLTextAreaElement, blob: Blob, fileName: string) => {
     if (blob) {
       const file = new File([blob], fileName, { type: blob.type });
       console.log('fileName', fileName);
@@ -141,7 +112,6 @@ const getAuthenticityToken = () => {
           }
 
           if (!textAreaElement) {
-            // @ts-expect-error -- window is allowed
             window.alert(
               `The github compression extension does not know where to place the file. Please copy and paste the following link into the textarea instead.\n\nLink: [${file.name}](${imageResponse.href})`,
             );
@@ -152,12 +122,10 @@ const getAuthenticityToken = () => {
           console.debug('success');
         });
     }
-  }
-
-
+  };
 
   const fileInputs = document.querySelectorAll('input[type=file]');
-  console.log("fileInputs", fileInputs);
+  console.log('fileInputs', fileInputs);
   // > 100Mb
   // const TRIGGER_SIZE = 99 * 1024 * 1024;
 
@@ -178,15 +146,22 @@ const getAuthenticityToken = () => {
           throw new Error('textAreaElement not found');
         }
 
-        // @ts-expect-error -- files allowed
-        const files = target.files as unknown as File[];
+        const files = target.files;
+        if (!files) {
+          throw new Error('files not found');
+        }
 
         // Iterate over the FileList
-        for (const file of files) {
+        for (let i = 0; i < files.length; i++) {
+          const file = files.item(i);
+          if (!file) {
+            throw new Error('file not found');
+          }
+
           if (file.type)
-          // const file = files[i];
-          // if (file.size > TRIGGER_SIZE) {
-          e.stopPropagation();
+            // const file = files[i];
+            // if (file.size > TRIGGER_SIZE) {
+            e.stopPropagation();
           e.preventDefault();
 
           // Check if the file type includes 'video'
@@ -194,13 +169,14 @@ const getAuthenticityToken = () => {
             e.stopPropagation();
             e.preventDefault();
 
-
-            compressFile(file, (progress) => {
-              console.log('Progress', progress);
+            compressFile(file, (progress, type) => {
+              console.log(`${type} progress`, progress);
             })
-              .then((message) => {
+              .then(message => {
                 console.log('finish compressed video');
-                uploadFile(textAreaElement, message.blob, message.fileName)
+                if (message.blob && message.fileName) {
+                  uploadFile(textAreaElement, message.blob, message.fileName);
+                }
               })
               .catch(err => {
                 console.log('err', err);
@@ -212,9 +188,8 @@ const getAuthenticityToken = () => {
   });
 })();
 
-
 // 1. Sync text areas with the file to upload
 // 2. Send file type information, so the correct file type is saved.
 
-// Sending a file could be async, currently it is not. 
+// Sending a file could be async, currently it is not.
 // It would make it easier if the function could be pure.

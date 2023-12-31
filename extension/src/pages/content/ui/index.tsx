@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 import App from '@pages/content/ui/app';
 import { createRoot } from 'react-dom/client';
 import refreshOnUpdate from 'virtual:reload-on-update-in-view';

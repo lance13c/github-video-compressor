@@ -130,7 +130,7 @@ def cleanup():
 def start_subprocess(ws):
     # Dev Server Path
     global proc
-    electron_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
+    electron_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
     main_script_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/.dev/main/index.js"
     current_directory = os.path.dirname(os.path.realpath(__file__))
 

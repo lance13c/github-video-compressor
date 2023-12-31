@@ -1,4 +1,4 @@
-import type { Message } from "@root/src/util/zod.util";
+import type { Message } from '@utils/zod.util';
 
 type Listener = (...args: unknown[]) => void;
 
@@ -16,15 +16,15 @@ export class NativeMessagingClient {
     try {
       console.log('appName', this.appName);
       this.port = chrome.runtime.connectNative(this.appName);
-      
+
       setTimeout(() => {
         this.sendMessage({
           type: 'connection',
           progress: 1,
           data: '',
-        })
-      }, 4000)
-      
+        });
+      }, 4000);
+
       this.port.onMessage.addListener(message => {
         console.log('on message:', message);
 
@@ -41,7 +41,7 @@ export class NativeMessagingClient {
   }
 
   sendMessage(message: Message): void {
-   // Convert the message to a JSON string and then to a Uint8Array
+    // Convert the message to a JSON string and then to a Uint8Array
     const messageString = JSON.stringify(message);
     const messageBuffer = new TextEncoder().encode(messageString);
 
@@ -54,23 +54,23 @@ export class NativeMessagingClient {
     combinedBuffer.set(lengthBuffer, 0);
     combinedBuffer.set(messageBuffer, lengthBuffer.byteLength);
 
-    console.log('lengthBuffer', lengthBuffer)
+    console.log('lengthBuffer', lengthBuffer);
 
     console.log('send message');
     this.port.postMessage(combinedBuffer);
   }
-  
+
   disconnect(): void {
     this.port.disconnect();
     this.port = null;
   }
 
   addListener = (listener: (message: Message) => void) => {
-      this.port.onMessage.addListener((message) => {
-        listener(message);
-        return false;
+    this.port.onMessage.addListener(message => {
+      listener(message);
+      return false;
     });
-  }
+  };
 
   removeListener(name: string): void {
     if (!this.listeners[name]) {

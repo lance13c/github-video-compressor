@@ -8,6 +8,7 @@ import { sendDebugMessage } from 'main/dev_websockets'
 import multer from 'multer'
 import path from 'path'
 import { generateHostKey, validateTokenMiddleware } from 'shared/utils/crypto.util'
+import { mimeTypeToExtension } from 'shared/utils/file.util'
 import { fileURLToPath } from 'url'
 
 ffmpeg.setFfmpegPath('/opt/homebrew/bin/ffmpeg')
@@ -32,20 +33,30 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
   // @ts-expect-error - import.meta.url is correct
   const __dirname = path.dirname(fileURLToPath(import.meta.url))
   sendDebugMessage('debug', `dirname: ${__dirname}`)
+
+  // Setup uploads folder
+  const uploadsDir = 'uploads/'
+
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true })
+  }
+
   const app: Express = express()
   app.use(cors())
 
   // Set up Multer to store files with original extensions
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
+      sendDebugMessage('debug - destination file name', file.filename)
       cb(null, 'uploads/') // Destination folder
     },
     filename: function (req, file, cb) {
-      const fileName = req.file?.filename
-      sendDebugMessage('debug - req file name', `${fileName}`)
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-      sendDebugMessage('debug - file name', file.originalname)
-      cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname)) // Preserve the file extension
+      const extension = mimeTypeToExtension(file.mimetype) || 'unknown'
+
+      sendDebugMessage('test file name', `${file.fieldname}-${uniqueSuffix}.${extension}`)
+      sendDebugMessage('debug - file mime type', file.mimetype)
+      cb(null, `${file.fieldname}-${uniqueSuffix}.${extension}`) // Preserve the file extension
     },
   })
 

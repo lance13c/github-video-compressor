@@ -1,16 +1,7 @@
 // FileChunkSender.ts
 
-import { base64ToUint8Array, uint8ArrayToBase64 } from '@root/src/pages/background/binaryHelpers';
-
-export type FileChunkMessage = {
-  id: string;
-  type: 'fileChunk';
-  chunk: string; // base64 encoded file chunk;
-  fileType: string;
-  progress: number;
-  isComplete: boolean;
-  url?: string;
-};
+import type { FileChunkMessage } from '@shared/types';
+import { base64ToUint8Array, uint8ArrayToBase64 } from '@utils/binary.util';
 
 export class BackgroundFileChunkSender {
   private readonly chunkSize: number;
@@ -27,7 +18,7 @@ export class BackgroundFileChunkSender {
     progress,
     isComplete,
   }: {
-    id,
+    id;
     chunk: Uint8Array;
     tabId: number;
     fileType: string;
@@ -90,7 +81,7 @@ export class BackgroundFileChunkSender {
       const progress = end / data.byteLength;
 
       // Convert chunk to Uint8Array and send
-      this.sendChunk({id, chunk, tabId, fileType, progress, isComplete });
+      this.sendChunk({ id, chunk, tabId, fileType, progress, isComplete });
     }
 
     console.log('Last chunk sent: ', totalChunks);
@@ -112,8 +103,7 @@ export class BackgroundFileChunkReceiver {
       this.url = message.url;
       if (message.type === 'fileChunk') {
         this.tabId = sender.tab?.id;
-        this.messageId = message.id,
-        this.handleFileChunk(message);
+        (this.messageId = message.id), this.handleFileChunk(message);
       }
     });
   }

@@ -9,6 +9,8 @@ import watchRebuild from './utils/plugins/watch-rebuild';
 
 const rootDir = resolve(__dirname);
 const srcDir = resolve(rootDir, 'src');
+const utilsDir = resolve(srcDir, 'utils');
+const sharedDir = resolve(srcDir, 'shared');
 const pagesDir = resolve(srcDir, 'pages');
 const assetsDir = resolve(srcDir, 'assets');
 const outDir = resolve(rootDir, 'dist');
@@ -24,6 +26,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@root': rootDir,
+      '@utils': utilsDir,
+      '@shared': sharedDir,
       '@src': srcDir,
       '@assets': assetsDir,
       '@pages': pagesDir,

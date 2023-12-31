@@ -1,8 +1,8 @@
-import { BackgroundFileChunkReceiver, BackgroundFileChunkSender } from '@root/src/pages/background/BackgroundFileChunkUtil';
-import { NativeMessageTransceiver } from '@root/src/pages/background/NativeMessageTransceiver';
-import { NativeMessagingClient } from '@root/src/pages/background/nativeMessageClient';
-import { setToken } from '@root/src/pages/background/tokenManager';
-import { pingTest, sendFileToServer } from '@root/src/util/file.util';
+import { BackgroundFileChunkReceiver, BackgroundFileChunkSender } from '@pages/background/BackgroundFileChunkUtil';
+import { NativeMessageTransceiver } from '@pages/background/NativeMessageTransceiver';
+import { NativeMessagingClient } from '@pages/background/nativeMessageClient';
+import { pingTest, sendFileToServer } from '@utils/file.util';
+import { setToken } from '@utils/token.util';
 // import { sendFileToServer } from '@root/src/util/file.util';
 import reloadOnUpdate from 'virtual:reload-on-update-in-background-script';
 import 'webextension-polyfill';
@@ -19,13 +19,13 @@ const init = async () => {
     });
     const fileChunkSender = new BackgroundFileChunkSender();
 
-    const dataStream = nativeMessageTransceiver.createDataStream(nativeMessageClient.addListener)
+    const dataStream = nativeMessageTransceiver.createDataStream(nativeMessageClient.addListener);
 
     dataStream.onProgress((progress, total) => {
       console.log('extension progress', progress, total);
-    })
+    });
 
-    dataStream.onComplete(async (message) => {
+    dataStream.onComplete(async message => {
       console.log('extension complete', message);
       if (message.type === 'connection') {
         const token = message.data;
@@ -34,7 +34,7 @@ const init = async () => {
 
         await pingTest();
       }
-    })
+    });
 
     new BackgroundFileChunkReceiver(async (blob, tabId, messageId) => {
       console.log('hit background file receiver');
@@ -45,20 +45,19 @@ const init = async () => {
         const fileName = `video.${fileExtension}`;
         const file = new File([blob], fileName, { type: blob.type });
 
-
-        const {file: compressedFile} = await sendFileToServer(file)
+        const { file: compressedFile } = await sendFileToServer(file);
 
         console.log('message sent complete:', compressedFile?.name);
 
         // convert file to uint8 array
-        const compressedFileData = await compressedFile.arrayBuffer()
+        const compressedFileData = await compressedFile.arrayBuffer();
         const uint8ArrayCompressedFileData = new Uint8Array(compressedFileData);
 
         await fileChunkSender.sendFile({
           id: messageId,
           data: uint8ArrayCompressedFileData,
           fileType: compressedFile.type,
-          tabId
+          tabId,
         });
       }
     });
