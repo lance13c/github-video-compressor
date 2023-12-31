@@ -3,7 +3,6 @@
 import atexit
 import json
 import os
-import queue
 import random
 import struct
 import subprocess
@@ -14,8 +13,25 @@ import time
 import backoff
 import websocket
 
-input_queue = queue.Queue()
-output_queue = queue.Queue()
+
+def find_project_root(current_path, target_folder):
+    """
+    Traverse up from current_path until a directory containing target_folder is found.
+    :param current_path: The starting directory path
+    :param target_folder: The target folder to look for
+    :return: The path of the directory containing target_folder or None if not found
+    """
+    while True:
+        potential_path = os.path.join(current_path, target_folder)
+        if os.path.exists(potential_path) and os.path.isdir(potential_path):
+            return current_path  # Found the target folder
+
+        parent = os.path.dirname(current_path)
+        if parent == current_path:
+            # Root of the file system reached, target folder not found
+            return None
+
+        current_path = parent
 
 colors = ["red", "blue", "green", "yellow", "pink", "black", "white", "purple", "orange", "brown"]
 animals = ["lion", "tiger", "bear", "flamingo", "eagle", "dolphin", "shark", "wolf", "fox", "deer"]
@@ -130,9 +146,10 @@ def cleanup():
 def start_subprocess(ws):
     # Dev Server Path
     global proc
-    electron_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
-    main_script_path = "/Users/dominic.cicilio/Documents/repos/github-video-compressor/app/node_modules/.dev/main/index.js"
     current_directory = os.path.dirname(os.path.realpath(__file__))
+    project_root = find_project_root(current_directory, '.github')
+    electron_path = os.path.join(project_root, "node_modules/electron/dist/Electron.app/Contents/MacOS/Electron")
+    main_script_path =  os.path.join(project_root, "app/node_modules/.dev/main/index.js")
 
     # Set environment variables for the subprocess
     env = os.environ.copy()

@@ -109,7 +109,7 @@ export const sendFile = async (
   file: File,
   options: SendingOptions = {
     id: uuid(),
-    chunkSize: 1024,
+    chunkSize: 1024 * 1024 * 30,
   },
 ): Promise<void> => {
   const fileSize = file.size
