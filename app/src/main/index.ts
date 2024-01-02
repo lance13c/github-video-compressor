@@ -36,35 +36,10 @@ makeAppWithSingleInstanceLock(async () => {
       }
     })
 
-    sendDebugMessage('info', 'Electron app started - HELLO 3333')
-
-    // const sendInterval = setInterval(() => {
-    //   sendDebugMessage('info', 'TEST ELECTRON 646464')
-    //   nativeMessagingHost.sendMessage({
-    //     type: 'text',
-    //     progress: 1,
-    //     data: 'Hello world',
-    //   })
-    // }, 6000)
-
-    // const nativeMessageTransceiver = new NativeMessageTransceiver({
-    //   chunkSizeIn: 1024,
-    //   chunkSizeOut: 1024,
-    // })
-
-    // const dataStream = nativeMessageTransceiver.createDataStream(nativeMessagingHost.addListener)
-
-    // dataStream.onProgress(formattedProgress => {
-    //   sendDebugMessage('info', `Progress ${formattedProgress}`)
-    // })
-
-    // dataStream.onComplete(message => {
-    //   sendDebugMessage('info', `electron complete ${message}`)
-    // })
+    sendDebugMessage('info', 'Electron app started')
 
     process.stdin.on('end', () => {
       sendDebugMessage('info', 'stdin closed, shutting down Electron app')
-      // clearInterval(sendInterval)
       server.close()
       app.quit()
     })

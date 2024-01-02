@@ -38,52 +38,42 @@ const getAuthenticityToken = () => {
   return authenticity_token
 }
 
+type EventListenerFunction = (evt: Event) => void
+
+const addEventListenerWrapper = (() => {
+  const eventListenersMap = new Map<Element, Map<string, Set<EventListenerFunction>>>()
+
+  return (
+    element: Element,
+    event: string,
+    listener: EventListenerFunction,
+    options?: boolean | AddEventListenerOptions,
+  ) => {
+    let eventsMap = eventListenersMap.get(element)
+    if (!eventsMap) {
+      eventsMap = new Map<string, Set<EventListenerFunction>>()
+      eventListenersMap.set(element, eventsMap)
+    }
+
+    let listeners = eventsMap.get(event)
+    if (!listeners) {
+      listeners = new Set<EventListenerFunction>()
+      eventsMap.set(event, listeners)
+    }
+
+    if (!listeners.has(listener)) {
+      listeners.add(listener)
+      element.addEventListener(event, listener, options)
+    }
+  }
+})()
+
 ;(async () => {
   await import('@pages/content/ui')
   await import('@pages/content/injected')
   const { execCommand } = await import('@root/src/utils/command.util')
   const { GithubUploader } = await import('@pages/content/GithubUploader')
   const githubUploader = new GithubUploader()
-
-  // new FileChunkReceiver(({ blob, progress }) => {
-  //   console.log('response', blob, progress);
-
-  // });
-
-  // Inject the responding image into the correct textarea element.
-  // This would be easiest if done with await messages, so the textarea is grabbed local to the element.
-
-  // // Function to add drag-and-drop event listeners to a textarea
-  // const addDragAndDropListeners = (textarea: HTMLTextAreaElement) => {
-  //   // Prevent the default behavior for dragover
-  //   textarea.addEventListener('dragover', (event: DragEvent) => {
-  //     event.preventDefault();
-  //   });
-
-  //   // Handle the drop event
-  //   textarea.addEventListener('drop', (event: DragEvent) => {
-  //     event.preventDefault();
-
-  //     // Ensure that dataTransfer is not null
-  //     if (event.dataTransfer) {
-  //       const files = event.dataTransfer.files;
-
-  //       if (files) {
-  //         // Iterate over the files
-  //         for (let i = 0; i < files.length; i++) {
-  //           const file = files[i];
-
-  //           // Check if the file type is a video
-  //           if (file.type.startsWith('video/')) {
-  //             console.log('Video file dropped:', file.name);
-
-  //             // Additional handling for the file can be done here
-  //           }
-  //         }
-  //       }
-  //     }
-  //   });
-  // };
 
   const uploadFile = (textAreaElement: HTMLTextAreaElement, blob: Blob, fileName: string) => {
     if (blob) {
@@ -125,94 +115,130 @@ const getAuthenticityToken = () => {
     }
   }
 
-  // sendFileToServer({file, token}).then({ file: compressedFile } => {
-  //             console.log('compressedFile', compressedFile)
-  //              console.log('finish compressed video')
-  //             if (compressedFile) {
-  //               uploadFile(textAreaElement, compressedFile, compressedFile.name)
-  //             }
-  //           })
+  const addDragAndDropListeners = () => {
+    const textAreaElements = document.querySelectorAll('.js-upload-markdown-image textarea')
 
-  const fileInputs = document.querySelectorAll('input[type=file]')
-  console.log('fileInputs', fileInputs)
-  // > 100Mb
-  // const TRIGGER_SIZE = 99 * 1024 * 1024;
+    textAreaElements.forEach(textAreaElement => {
+      // Prevent the default behavior for dragover
+      addEventListenerWrapper(textAreaElement, 'dragover', (event: DragEvent) => {
+        event.preventDefault()
+      })
 
-  fileInputs.forEach(fileInput => {
-    fileInput.addEventListener('change', (e: Event) => {
-      const target = e.target as HTMLInputElement
+      // Handle the drop event
+      addEventListenerWrapper(textAreaElement, 'drop', (event: DragEvent) => {
+        event.preventDefault()
 
-      if (!target || target?.type !== 'file') {
-        return
-      }
+        // Ensure that dataTransfer is not null
+        if (event.dataTransfer) {
+          const files = event.dataTransfer.files
 
-      if (target && target.type === 'file') {
-        // const fileAttachmentInputName = (e.target as HTMLInputElement).getAttribute('id');
-        const textAreaElement = document.querySelector(`.js-upload-markdown-image textarea`) as HTMLTextAreaElement
-        // console.log('textArea', textAreaElement);
+          if (files) {
+            // Iterate over the files
+            for (let i = 0; i < files.length; i++) {
+              const file = files[i]
 
-        if (!textAreaElement) {
-          throw new Error('textAreaElement not found')
-        }
+              // Check if the file type is a video
+              if (file.type.startsWith('video/')) {
+                console.log('Video file dropped:', file.name)
 
-        const files = target.files
-        if (!files) {
-          throw new Error('files not found')
-        }
-
-        // Iterate over the FileList
-        for (let i = 0; i < files.length; i++) {
-          const file = files.item(i)
-          if (!file) {
-            throw new Error('file not found')
-          }
-
-          if (file.type)
-            // const file = files[i];
-            // if (file.size > TRIGGER_SIZE) {
-            e.stopPropagation()
-          e.preventDefault()
-
-          // Check if the file type includes 'video'
-          if (file.type.includes('video')) {
-            e.stopPropagation()
-            e.preventDefault()
-
-            execCommand('compress_file', {
-              file,
-            })
-              .then(({ file: compressedFile }) => {
-                console.log('compressedFile', compressedFile)
-                console.log('finish compressed video')
-                if (compressedFile) {
-                  uploadFile(textAreaElement, compressedFile, compressedFile.name)
-                }
-              })
-              .catch(err => {
-                console.log('err', err)
-              })
-
-            // compressFile(file, (progress, type) => {
-            //   console.log(`${type} progress`, progress)
-            // })
-            //   .then(message => {
-
-            //     if (message.blob && message.fileName) {
-            //       uploadFile(textAreaElement, message.blob, message.fileName)
-            //     }
-            //   })
-            //   .catch(err => {
-            //     console.log('err', err)
-            //   })
+                // Additional handling for the file can be done here
+              }
+            }
           }
         }
-      }
+      })
     })
+  }
+
+  const TRIGGER_SIZE = 50 * 1024 * 1024 // 100Mb
+  const addFileUploadListeners = () => {
+    const fileInputs = document.querySelectorAll('input[type=file]')
+    console.log('fileInputs', fileInputs)
+
+    fileInputs.forEach(fileInput => {
+      addEventListenerWrapper(fileInput, 'change', (e: Event) => {
+        const target = e.target as HTMLInputElement
+
+        if (!target || target?.type !== 'file') {
+          return
+        }
+
+        if (target && target.type === 'file') {
+          const textAreaElement = document.querySelector(`.js-upload-markdown-image textarea`) as HTMLTextAreaElement
+
+          if (!textAreaElement) {
+            throw new Error('textAreaElement not found')
+          }
+
+          const files = target.files
+          if (!files) {
+            throw new Error('files not found')
+          }
+
+          // Iterate over the FileList
+          for (let i = 0; i < files.length; i++) {
+            const file = files.item(i)
+            if (!file) {
+              throw new Error('file not found')
+            }
+
+            if (file.type) {
+              e.stopPropagation()
+              e.preventDefault()
+
+              // Check if the file type includes 'video'
+              if (file.type.includes('video')) {
+                e.stopPropagation()
+                e.preventDefault()
+
+                // file.size > TRIGGER_SIZE
+                if (true) {
+                  execCommand('compress_file', {
+                    file,
+                  })
+                    .then(({ file: compressedFile }) => {
+                      console.log('compressedFile', compressedFile)
+                      console.log('finish compressed video')
+                      if (compressedFile) {
+                        uploadFile(textAreaElement, compressedFile, compressedFile.name)
+                      }
+                    })
+                    .catch(err => {
+                      console.log('err', err)
+                    })
+                }
+              }
+            }
+          }
+        }
+      })
+    })
+  }
+
+  // Select the node that will be observed for mutations
+  const targetNode = document.querySelector('.pull-discussion-timeline')
+  console.log('selectNode', targetNode)
+
+  // Callback function to execute when mutations are observed
+  const callback = function (mutationsList) {
+    for (const mutation of mutationsList) {
+      console.log('mutation', mutation)
+      addFileUploadListeners()
+      // addDragAndDropListeners()
+    }
+  }
+
+  // Create an instance of MutationObserver
+  const observer = new MutationObserver(callback)
+
+  // Start observing the target node for configured mutations
+  observer.observe(targetNode, {
+    childList: true,
+    subtree: true,
+    attributeFilter: ['data-file-attachment-for'],
   })
+
+  // init
+  addFileUploadListeners()
+  // addDragAndDropListeners()
 })()
-
-// 1. Sync text areas with the file to upload
-// 2. Send file type information, so the correct file type is saved.
-
-// Sending a file could be async, currently it is not.
-// It would make it easier if the function could be pure.

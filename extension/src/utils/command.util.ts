@@ -18,10 +18,8 @@ export const execCommand = async <T extends keyof typeof COMMAND_MAP>(
   })
   console.debug('result', result)
 
-  const success = stopSession()
+  const success = await stopSession()
   console.debug('stop session success', success)
 
   return result
-
-  // end session
 }
