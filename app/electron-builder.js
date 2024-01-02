@@ -25,7 +25,7 @@ module.exports = {
   },
 
   dmg: {
-    icon: true,
+    icon: false,
   },
 
   linux: {

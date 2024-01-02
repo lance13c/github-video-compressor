@@ -12,6 +12,7 @@
 **/dist
 **/app/launcher/dist/dev_mode_launcher/_internal
 releases
+temp.txt
 
 # Compiled Scripts
 **/utils/reload/*.js
