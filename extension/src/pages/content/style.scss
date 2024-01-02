@@ -1,7 +1,34 @@
-@import '@assets/style/theme.scss';
-
 // CSS that can pollute global styles. Use it with caution.
 // If you use ShodowRoot for style pollution, this style will not be applied inside the content script.
 .content-view-style-may-be-not-working {
   font-size: 30px;
+}
+
+.gvc-spinner {
+  position: absolute;
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Thinner border */
+  border-radius: 50%;
+  border-top: 1px solid #2f81f7; /* Thinner colored border on top */
+  width: 20px;
+  height: 20px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
+
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

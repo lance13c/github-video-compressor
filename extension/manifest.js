@@ -1,4 +1,4 @@
-import packageJson from './package.json' assert { type: 'json' };
+import packageJson from './package.json' assert { type: 'json' }
 
 /**
  * After changing, please reload the extension at `chrome://extensions`
@@ -29,9 +29,9 @@ const manifest = {
   content_scripts: [
     {
       matches: ['http://*/*', 'https://*/*', '<all_urls>'],
-      js: ['src/pages/content/index.js'],
       // KEY for cache invalidation
-      css: [],
+      js: ['src/pages/content/index.js'],
+      css: ['assets/css/contentStyle<KEY>.chunk.css'],
     },
   ],
   devtools_page: 'src/pages/devtools/index.html',
@@ -50,9 +50,6 @@ const manifest = {
       matches: ['*://*/*'],
     },
   ],
-  content_security_policy: {
-    extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'",
-  },
-};
+}
 
-export default manifest;
+export default manifest
