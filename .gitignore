@@ -1,18 +1,37 @@
-# dependencies
+# Dependencies
 /node_modules
+/.pnp
+.pnp.js
 
-# testing
+# Testing
 /coverage
 
-# build
+# Build and Production
+/build
 /dist
+**/dist
+**/app/launcher/dist/dev_mode_launcher/_internal
 
-# etc
+# Compiled Scripts
+**/utils/reload/*.js
+**/utils/reload/injections/*.js
+**/public/manifest.json
+
+# Environment and Configuration Files
 .DS_Store
+.env
 .env.local
-.idea
+.env.development.local
+.env.test.local
+.env.production.local
+.eslintcache
 
-# compiled
-utils/reload/*.js
-utils/reload/injections/*.js
-public/manifest.json
+# IDE Specific
+**/.idea
+**/com.*
+
+# Internal and Miscellaneous
+**/_internal
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

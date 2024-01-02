@@ -1,0 +1,20 @@
+# dependencies
+**/node_modules
+
+# testing
+**/coverage
+
+# build
+**/dist
+
+# etc
+**/.DS_Store
+**/.env.local
+**/.idea
+**/app/launcher/dist/dev_mode_launcher/_internal
+
+# compiled
+**/utils/reload/*.js
+**/utils/reload/injections/*.js
+**/public/manifest.json
+**/com.*
