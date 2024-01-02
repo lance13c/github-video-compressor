@@ -256,6 +256,10 @@ const fileSizeToMB = fileSize => {
           // Iterate over the FileList
           for (let i = 0; i < files.length; i++) {
             const file = files.item(i)
+
+            // Ignore files that are small
+            if (file.size < TRIGGER_SIZE) return
+
             if (!file) {
               throw new Error('file not found')
             }
@@ -269,28 +273,26 @@ const fileSizeToMB = fileSize => {
                 e.stopPropagation()
                 e.preventDefault()
 
-                if (file.size > TRIGGER_SIZE) {
-                  displayLoadingWithSpinner(textAreaElement, `Compressing [${file.name}]`)
-                  execCommand('compress_file', {
-                    file,
-                  })
-                    .then(({ file: compressedFile }) => {
-                      console.log('compressedFile', compressedFile)
-                      console.log('finish compressed video')
-                      if (compressedFile) {
-                        updateLoadingText(
-                          textAreaElement,
-                          `Compressing [${file.name}]`,
-                          `Uploading [${compressedFile.name}]`,
-                        )
+                displayLoadingWithSpinner(textAreaElement, `Compressing [${file.name}]`)
+                execCommand('compress_file', {
+                  file,
+                })
+                  .then(({ file: compressedFile }) => {
+                    console.log('compressedFile', compressedFile)
+                    console.log('finish compressed video')
+                    if (compressedFile) {
+                      updateLoadingText(
+                        textAreaElement,
+                        `Compressing [${file.name}]`,
+                        `Uploading [${compressedFile.name}]`,
+                      )
 
-                        uploadFile(textAreaElement, compressedFile, compressedFile.name)
-                      }
-                    })
-                    .catch(err => {
-                      console.log('err', err)
-                    })
-                }
+                      uploadFile(textAreaElement, compressedFile, compressedFile.name)
+                    }
+                  })
+                  .catch(err => {
+                    console.log('err', err)
+                  })
               }
             }
           }

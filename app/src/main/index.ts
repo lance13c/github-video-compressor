@@ -1,7 +1,7 @@
 import { app } from 'electron'
 
 // import { sendDebugMessage } from 'main/dev_websockets'
-import { sendDebugMessage } from 'main/dev_websockets'
+import { initWebSocketServer, sendDebugMessage } from 'main/dev_websockets'
 import { generateToken } from 'shared/utils/crypto.util'
 import { startHttpFileServer } from 'shared/utils/httpFileServer'
 import { NativeMessagingHost } from 'shared/utils/nativeMessagingHost'
@@ -14,8 +14,13 @@ const port = 7777
 makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
 
+  const isDev = process.argv.includes('--development')
+
   try {
     const nativeMessagingHost = new NativeMessagingHost()
+    if (isDev) {
+      initWebSocketServer()
+    }
     const { server } = startHttpFileServer(app, port)
 
     nativeMessagingHost.addListener(message => {
@@ -49,6 +54,5 @@ makeAppWithSingleInstanceLock(async () => {
     // @ts-ignore
     sendDebugMessage('error', e?.message || 'unknown')
     app.quit()
-    console.error('app error:', e)
   }
 })

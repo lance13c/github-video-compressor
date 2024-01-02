@@ -1,6 +1,6 @@
 import WebSocket from 'ws'
 
-const debugWebSocket = new WebSocket('ws://localhost:3333')
+let debugWebSocket: WebSocket | null = null
 
 function generateRandomClientId() {
   const colors = ['red', 'blue', 'green', 'yellow', 'pink', 'black', 'white', 'purple', 'orange', 'brown']
@@ -9,10 +9,23 @@ function generateRandomClientId() {
   const animal = animals[Math.floor(Math.random() * animals.length)]
   return `${color} ${animal}`
 }
-
 const clientId = generateRandomClientId()
 
+export const initWebSocketServer = () => {
+  debugWebSocket = new WebSocket('ws://localhost:3333')
+
+  debugWebSocket.on('open', function open() {
+    sendDebugMessage('info', 'Connected to debug server')
+  })
+
+  debugWebSocket.on('close', function close() {
+    sendDebugMessage('info', 'Disconnected from debug server')
+  })
+}
+
 export function sendDebugMessage(type: string, data: string | Record<string, any> | null) {
+  if (!debugWebSocket) return
+
   const message = {
     type: type,
     client_id: clientId,
@@ -29,11 +42,3 @@ export function sendDebugMessage(type: string, data: string | Record<string, any
     }, 2000)
   }
 }
-
-debugWebSocket.on('open', function open() {
-  sendDebugMessage('info', 'Connected to debug server')
-})
-
-debugWebSocket.on('close', function close() {
-  sendDebugMessage('info', 'Disconnected from debug server')
-})
