@@ -10,7 +10,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "types": ["node", "chrome"],
+    "types": ["node", "chrome", "browser"],
     "lib": ["dom", "DOM.Iterable", "esnext"],
     "forceConsistentCasingInFileNames": true,
     "paths": {

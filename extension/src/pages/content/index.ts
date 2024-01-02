@@ -1,49 +1,49 @@
 function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: string): void {
-  const markdownLink = `\n\n[${name}](${href})\n\n`;
+  const markdownLink = `\n\n[${name}](${href})\n\n`
 
   // Check if the browser supports `selectionStart` and `selectionEnd`
 
-  const startPos = textArea.selectionStart;
-  const endPos = textArea.selectionEnd;
-  const beforeText = textArea.value.substring(0, startPos);
-  const afterText = textArea.value.substring(endPos);
+  const startPos = textArea.selectionStart
+  const endPos = textArea.selectionEnd
+  const beforeText = textArea.value.substring(0, startPos)
+  const afterText = textArea.value.substring(endPos)
 
   // Insert the markdown link where the cursor is, or at the end if no selection
-  textArea.value = beforeText + markdownLink + afterText;
+  textArea.value = beforeText + markdownLink + afterText
 
   // Move the cursor to the end of the new link
-  textArea.selectionStart = textArea.selectionEnd = startPos + markdownLink.length;
+  textArea.selectionStart = textArea.selectionEnd = startPos + markdownLink.length
 
   // Optionally, focus the textarea
-  textArea.focus();
+  textArea.focus()
 }
 
 const getRepositoryId = () => {
   const repository_id = document
     .querySelector('meta[name="octolytics-dimension-repository_id"]')
-    ?.getAttribute('content');
+    ?.getAttribute('content')
   if (!repository_id) {
-    throw new Error('repository_id not found');
+    throw new Error('repository_id not found')
   }
 
-  return repository_id;
-};
+  return repository_id
+}
 
 const getAuthenticityToken = () => {
-  const authenticity_token = document.querySelector('.js-data-upload-policy-url-csrf')?.getAttribute('value');
+  const authenticity_token = document.querySelector('.js-data-upload-policy-url-csrf')?.getAttribute('value')
   if (!authenticity_token) {
-    throw new Error('authenticity_token not found');
+    throw new Error('authenticity_token not found')
   }
 
-  return authenticity_token;
-};
+  return authenticity_token
+}
 
-(async () => {
-  await import('@pages/content/ui');
-  await import('@pages/content/injected');
-  const { compressFile } = await import('@pages/content/FileTransceiver');
-  const { GithubUploader } = await import('@pages/content/GithubUploader');
-  const githubUploader = new GithubUploader();
+;(async () => {
+  await import('@pages/content/ui')
+  await import('@pages/content/injected')
+  const { execCommand } = await import('@root/src/utils/command.util')
+  const { GithubUploader } = await import('@pages/content/GithubUploader')
+  const githubUploader = new GithubUploader()
 
   // new FileChunkReceiver(({ blob, progress }) => {
   //   console.log('response', blob, progress);
@@ -87,106 +87,129 @@ const getAuthenticityToken = () => {
 
   const uploadFile = (textAreaElement: HTMLTextAreaElement, blob: Blob, fileName: string) => {
     if (blob) {
-      const file = new File([blob], fileName, { type: blob.type });
-      console.log('fileName', fileName);
+      const file = new File([blob], fileName, { type: blob.type })
+      console.log('fileName', fileName)
 
-      const repository_id = getRepositoryId();
-      const authenticity_token = getAuthenticityToken();
+      const repository_id = getRepositoryId()
+      const authenticity_token = getAuthenticityToken()
+      const randomNumber = Math.floor(Math.random() * 1000000000)
 
       githubUploader
         .startImageUpload({
-          imageName: file.name,
+          imageName: `v-${randomNumber}-${file.name}`,
           imageSize: file.size,
           authenticity_token,
           content_type: file.type,
           repository_id,
           file,
           imageUploadCompleteCallback: () => {
-            console.log('Upload complete');
+            console.log('Upload complete')
           },
         })
         .then(imageResponse => {
-          console.log('imageResponse', imageResponse);
+          console.log('imageResponse', imageResponse)
           if (!imageResponse) {
-            throw new Error('imageResponse is invalid');
+            throw new Error('imageResponse is invalid')
           }
 
           if (!textAreaElement) {
             window.alert(
               `The github compression extension does not know where to place the file. Please copy and paste the following link into the textarea instead.\n\nLink: [${file.name}](${imageResponse.href})`,
-            );
-            throw new Error('textAreaElement not found');
+            )
+            throw new Error('textAreaElement not found')
           }
 
-          injectMarkdownLink(textAreaElement, file.name, imageResponse.href);
-          console.debug('success');
-        });
+          injectMarkdownLink(textAreaElement, file.name, imageResponse.href)
+          console.debug('success')
+        })
     }
-  };
+  }
 
-  const fileInputs = document.querySelectorAll('input[type=file]');
-  console.log('fileInputs', fileInputs);
+  // sendFileToServer({file, token}).then({ file: compressedFile } => {
+  //             console.log('compressedFile', compressedFile)
+  //              console.log('finish compressed video')
+  //             if (compressedFile) {
+  //               uploadFile(textAreaElement, compressedFile, compressedFile.name)
+  //             }
+  //           })
+
+  const fileInputs = document.querySelectorAll('input[type=file]')
+  console.log('fileInputs', fileInputs)
   // > 100Mb
   // const TRIGGER_SIZE = 99 * 1024 * 1024;
 
   fileInputs.forEach(fileInput => {
     fileInput.addEventListener('change', (e: Event) => {
-      const target = e.target as HTMLInputElement;
+      const target = e.target as HTMLInputElement
 
       if (!target || target?.type !== 'file') {
-        return;
+        return
       }
 
       if (target && target.type === 'file') {
         // const fileAttachmentInputName = (e.target as HTMLInputElement).getAttribute('id');
-        const textAreaElement = document.querySelector(`.js-upload-markdown-image textarea`) as HTMLTextAreaElement;
+        const textAreaElement = document.querySelector(`.js-upload-markdown-image textarea`) as HTMLTextAreaElement
         // console.log('textArea', textAreaElement);
 
         if (!textAreaElement) {
-          throw new Error('textAreaElement not found');
+          throw new Error('textAreaElement not found')
         }
 
-        const files = target.files;
+        const files = target.files
         if (!files) {
-          throw new Error('files not found');
+          throw new Error('files not found')
         }
 
         // Iterate over the FileList
         for (let i = 0; i < files.length; i++) {
-          const file = files.item(i);
+          const file = files.item(i)
           if (!file) {
-            throw new Error('file not found');
+            throw new Error('file not found')
           }
 
           if (file.type)
             // const file = files[i];
             // if (file.size > TRIGGER_SIZE) {
-            e.stopPropagation();
-          e.preventDefault();
+            e.stopPropagation()
+          e.preventDefault()
 
           // Check if the file type includes 'video'
           if (file.type.includes('video')) {
-            e.stopPropagation();
-            e.preventDefault();
+            e.stopPropagation()
+            e.preventDefault()
 
-            compressFile(file, (progress, type) => {
-              console.log(`${type} progress`, progress);
+            execCommand('compress_file', {
+              file,
             })
-              .then(message => {
-                console.log('finish compressed video');
-                if (message.blob && message.fileName) {
-                  uploadFile(textAreaElement, message.blob, message.fileName);
+              .then(({ file: compressedFile }) => {
+                console.log('compressedFile', compressedFile)
+                console.log('finish compressed video')
+                if (compressedFile) {
+                  uploadFile(textAreaElement, compressedFile, compressedFile.name)
                 }
               })
               .catch(err => {
-                console.log('err', err);
-              });
+                console.log('err', err)
+              })
+
+            // compressFile(file, (progress, type) => {
+            //   console.log(`${type} progress`, progress)
+            // })
+            //   .then(message => {
+
+            //     if (message.blob && message.fileName) {
+            //       uploadFile(textAreaElement, message.blob, message.fileName)
+            //     }
+            //   })
+            //   .catch(err => {
+            //     console.log('err', err)
+            //   })
           }
         }
       }
-    });
-  });
-})();
+    })
+  })
+})()
 
 // 1. Sync text areas with the file to upload
 // 2. Send file type information, so the correct file type is saved.

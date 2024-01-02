@@ -1,6 +1,6 @@
 import bodyParser from 'body-parser'
 import cors from 'cors'
-import express, { Express, Request, Response } from 'express'
+import express, { Express, NextFunction, Request, Response } from 'express'
 import ffmpeg from 'fluent-ffmpeg'
 import fs from 'fs'
 import https from 'https'
@@ -28,6 +28,34 @@ declare global {
   }
 }
 
+async function deleteFilesInDirectory(dirPath: string): Promise<void> {
+  try {
+    const files = await fs.promises.readdir(dirPath)
+    const unlinkPromises = files.map(file => {
+      const filePath = path.join(dirPath, file)
+      return fs.promises.unlink(filePath)
+    })
+    await Promise.all(unlinkPromises)
+    console.log(`All files in ${dirPath} have been deleted.`)
+  } catch (error) {
+    console.error(`Error deleting files in directory ${dirPath}:`, error)
+    throw error // Rethrow the error if you want to handle it further up the call stack
+  }
+}
+
+// Middleware to wipe a specific directory
+const wipeDirectoryMiddleware = (dirPath: string) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await deleteFilesInDirectory(dirPath)
+      next()
+    } catch (error) {
+      sendDebugMessage('debug', `Error wiping directory ${dirPath}: ${error?.message}`)
+      res.status(500).json({ message: 'Error processing request' })
+    }
+  }
+}
+
 export const startHttpFileServer = (electronApp: Electron.App, port: number = 7779) => {
   const tempPath = electronApp.getPath('temp')
   // @ts-expect-error - import.meta.url is correct
@@ -35,7 +63,8 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
   sendDebugMessage('debug', `dirname: ${__dirname}`)
 
   // Setup uploads folder
-  const uploadsDir = 'uploads/'
+  const uploadsDir = tempPath + 'github_app_compressor/' + 'uploads'
+  sendDebugMessage('debug', `uploadsDir: ${uploadsDir}`)
 
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true })
@@ -48,7 +77,7 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       sendDebugMessage('debug - destination file name', file.filename)
-      cb(null, 'uploads/') // Destination folder
+      cb(null, uploadsDir) // Destination folder
     },
     filename: function (req, file, cb) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
@@ -72,78 +101,108 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
   })
 
   // File upload endpoint
-  app.post('/upload', [validateTokenMiddleware, upload.single('file')], (req: Request, res: Response) => {
-    if (!req.file) {
-      sendDebugMessage('debug', 'No file received')
-      return res.status(400).json('')
-    }
+  app.post(
+    '/upload',
+    [validateTokenMiddleware, wipeDirectoryMiddleware(uploadsDir), upload.single('file')],
+    (req: Request, res: Response) => {
+      if (!req.file) {
+        sendDebugMessage('debug', 'No file received')
+        return res.status(400).json('')
+      }
 
-    sendDebugMessage('debug - name', req.file.originalname)
-    sendDebugMessage('debug - path', req.file.path)
-    // @ts-expect-error -- test token
-    sendDebugMessage('debug - token', req?.token)
-    sendDebugMessage('debug - file', req.file)
-    // fs.move(req.file.path, path.join(__dirname, 'uploads', req.file.originalname), { overwrite: true })
-    //   .then(() => res.status(200).json({ message: 'File uploaded successfully.' }))
-    //   .catch(err => {
-    //     sendDebugMessage('debug', err?.message)
-    //     res.status(500).json('')
-    //   })
+      sendDebugMessage('debug upload path', fs.readdirSync(uploadsDir))
 
-    const inputPath = req.file.path
-    sendDebugMessage('debug - input path', inputPath)
+      sendDebugMessage('debug - name', req.file.originalname)
+      sendDebugMessage('debug - path', req.file.path)
+      sendDebugMessage('debug - upload input path', fs.readdirSync('uploads').join(', '))
+      // @ts-expect-error -- test token
+      sendDebugMessage('debug - token', req?.token)
+      sendDebugMessage('debug - file', req.file)
+      // fs.move(req.file.path, path.join(__dirname, 'uploads', req.file.originalname), { overwrite: true })
+      //   .then(() => res.status(200).json({ message: 'File uploaded successfully.' }))
+      //   .catch(err => {
+      //     sendDebugMessage('debug', err?.message)
+      //     res.status(500).json('')
+      //   })
 
-    const outputFileName = req.file.originalname
-    const outputPath = path.join(tempPath, outputFileName)
+      const inputPath = req.file.path
+      sendDebugMessage('debug - input path', inputPath)
 
-    sendDebugMessage('debug', `outputPath: ${outputPath}`)
-    // Save the file locally
-    // const inputPath = `${filesPath}/${req.file.originalname}`
-    // fs.writeFileSync(inputPath, req.file.buffer)
+      // const newInputFilePath = path.join(uploadsDir, req.file.filename)
+      // const buffer = req.file.buffer
+      // sendDebugMessage('debug - buffer', `${buffer}`)
+      // fs.writeFileSync(newInputFilePath, buffer)
+      // sendDebugMessage('debug - does new input file exist', `${fs.existsSync(newInputFilePath)}`)
 
-    // check if file exists
-    sendDebugMessage('debug', `inputPath exists: ${fs.existsSync(inputPath)}`)
+      // get size of new input file
+      const statsNewInput = fs.statSync(inputPath)
+      const fileSizeInBytesNewInput = statsNewInput.size
+      sendDebugMessage('debug - new input file size', `${fileSizeInBytesNewInput}`)
 
-    ffmpeg(inputPath)
-      .noAudio()
-      .videoCodec('libx264')
-      .addOptions(['-crf 28', '-preset ultrafast', '-vf', 'scale=-1:720'])
-      .output(outputPath)
-      .on('start', commandLine => {
-        sendDebugMessage('debug', 'Spawned FFmpeg with command: ' + commandLine)
-      })
-      .on('codecData', data => {
-        sendDebugMessage('debug', 'Input is ' + data.audio + ' audio with ' + data.video + ' video')
-      })
-      .on('error', (err: Error) => {
-        sendDebugMessage('debug - error', err.message)
-        res.status(500).json({ message: 'Error processing file' })
-      })
-      .on('end', () => {
-        sendDebugMessage('debug', 'Processing finished !')
-        const outputFileExists = fs.existsSync(outputPath)
+      // print input file size
+      const statsInput = fs.statSync(inputPath)
+      const fileSizeInBytesInput = statsInput.size
+      sendDebugMessage('debug - input file size', `${fileSizeInBytesInput}`)
 
-        sendDebugMessage('debug - output file exists', `${outputFileExists}`)
-        if (outputFileExists) {
-          // File processing finished, send the file
-          // Download output file
+      const uniqueNumber = Date.now() + '-' + Math.round(Math.random() * 1e9)
 
-          return res.status(200).download(outputPath, outputFileName, err => {
-            if (err) {
-              sendDebugMessage('debug', err?.message)
-              return res.status(500).json({ message: 'Error processing file' })
-            }
+      const outputFileName = `video-${uniqueNumber}.mp4`
+      const outputPath = path.join(uploadsDir, outputFileName)
 
-            // Delete files from temp directory
-            fs.unlinkSync(inputPath)
-            fs.unlinkSync(outputPath)
-          })
-        } else {
-          return res.status(500).json({ message: 'Error processing file' })
-        }
-      })
-      .run()
-  })
+      sendDebugMessage('debug', `outputPath: ${outputPath}`)
+      sendDebugMessage('debug', `pre command outputPath exists: ${!!fs.existsSync(outputPath)}`)
+      // Save the file locally
+      // const inputPath = `${filesPath}/${req.file.originalname}`
+      // fs.writeFileSync(inputPath, req.file.buffer)
+
+      // check if file exists
+      sendDebugMessage('debug', `inputPath exists: ${fs.existsSync(inputPath)}`)
+
+      ffmpeg(inputPath)
+        .noAudio()
+        .videoCodec('libx264')
+        .addOptions(['-crf 28', '-preset ultrafast'])
+        .on('start', commandLine => {
+          sendDebugMessage('debug', 'Spawned FFmpeg with command: ' + commandLine)
+        })
+        .on('codecData', data => {
+          sendDebugMessage('debug', 'Input is ' + data.audio + ' audio with ' + data.video + ' video')
+        })
+        .on('error', (err: Error) => {
+          sendDebugMessage('debug - error', err.message)
+          res.status(500).json({ message: 'Error processing file' })
+        })
+        .on('end', () => {
+          sendDebugMessage('debug', 'Processing finished !')
+          const outputFileExists = fs.existsSync(outputPath)
+
+          // Get the size of the output file
+          const stats = fs.statSync(outputPath)
+          const fileSizeInBytes = stats.size
+          sendDebugMessage('debug - output file size', `${fileSizeInBytes}`)
+
+          sendDebugMessage('debug - output file exists', `${outputFileExists}`)
+          if (outputFileExists) {
+            // File processing finished, send the file
+            // Download output file
+            sendDebugMessage('debug', 'downloading file')
+            const response = res.status(200).download(outputPath, outputFileName, err => {
+              if (err) {
+                sendDebugMessage('debug', err?.message)
+                return res.status(500).json({ message: 'Error processing file' })
+              }
+
+              // Delete files from temp directory
+            })
+
+            return response
+          } else {
+            return res.status(500).json({ message: 'Error processing file' })
+          }
+        })
+        .save(outputPath)
+    },
+  )
 
   // HTTP Options
   const { privateKey, publicKey } = generateHostKey()

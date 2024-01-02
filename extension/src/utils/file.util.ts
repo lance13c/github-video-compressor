@@ -1,16 +1,24 @@
-import { getToken } from '@utils/token.util'
+import type { Command } from '@root/src/shared/types'
 
-export async function sendFileToServer(
-  file: File,
-  port: number = 7777,
-): Promise<{
+interface SendFileToServerOptions {
+  file: File
+  token: string
+  port?: number
+}
+
+interface SendFileToServerReturn {
   file?: File
-}> {
+}
+
+export const sendFileToServer: Command<SendFileToServerOptions, Promise<SendFileToServerReturn>> = async ({
+  file,
+  token,
+  port = 7777,
+}) => {
   const formData = new FormData()
   formData.append('file', file)
 
-  const token = await getToken()
-  console.log('token before send', token)
+  console.log('token exists', !!token)
 
   const response = await fetch(`http://127.0.0.1:${port}/upload`, {
     method: 'POST',
