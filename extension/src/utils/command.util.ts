@@ -1,4 +1,4 @@
-import { startSession } from '@root/src/utils/extension.util'
+import { startSession, stopSession } from '@root/src/utils/extension.util'
 import { sendFileToServer } from '@root/src/utils/file.util'
 
 const COMMAND_MAP = {
@@ -16,8 +16,12 @@ export const execCommand = async <T extends keyof typeof COMMAND_MAP>(
     ...commandOptions,
     token,
   })
-  console.log('result', result)
+  console.debug('result', result)
+
+  const success = stopSession()
+  console.debug('stop session success', success)
 
   return result
+
   // end session
 }

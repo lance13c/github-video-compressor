@@ -36,9 +36,10 @@ async function deleteFilesInDirectory(dirPath: string): Promise<void> {
       return fs.promises.unlink(filePath)
     })
     await Promise.all(unlinkPromises)
-    console.log(`All files in ${dirPath} have been deleted.`)
+    sendDebugMessage('debug', `All files in ${dirPath} have been deleted.`)
   } catch (error) {
-    console.error(`Error deleting files in directory ${dirPath}:`, error)
+    // @ts-expect-error -- error message is valid
+    sendDebugMessage('error', `Error deleting files in directory ${dirPath}: ${error?.message}`)
     throw error // Rethrow the error if you want to handle it further up the call stack
   }
 }
@@ -50,6 +51,7 @@ const wipeDirectoryMiddleware = (dirPath: string) => {
       await deleteFilesInDirectory(dirPath)
       next()
     } catch (error) {
+      // @ts-expect-error -- error message is valid
       sendDebugMessage('debug', `Error wiping directory ${dirPath}: ${error?.message}`)
       res.status(500).json({ message: 'Error processing request' })
     }

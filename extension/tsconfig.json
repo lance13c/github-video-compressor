@@ -10,7 +10,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "types": ["node", "chrome", "browser"],
+    "types": ["node", "chrome"],
     "lib": ["dom", "DOM.Iterable", "esnext"],
     "forceConsistentCasingInFileNames": true,
     "paths": {
@@ -27,12 +27,3 @@
   "include": ["./**/*.ts", "node_modules/@types"],
   "exclude": ["node_modules"]
 }
-
-// {
-//   "extends": "../../../tsconfig.json",  // Adjust the path according to your folder structure
-//   "compilerOptions": {
-//     "lib": ["dom", "esnext"],  // Include 'dom' explicitly
-//     "types": ["chrome"],
-//   },
-//   "include": ["./**/*.ts"]
-// }
