@@ -4,8 +4,8 @@
 
 ## Description
 
-A inline video compressor for Github PR.
-Never see the 100MB upload video file limit on Github PRs again.
+An inline video compressor for GitHub PR.
+Never see the 100MB upload video file limit on GitHub PRs again.
 
 ## Table of Contents
 
