@@ -90,8 +90,6 @@ function updateLoadingText(textArea: HTMLTextAreaElement, currentLoadingText: st
 
 function removeSpinner(): void {
   const spinners = document.querySelectorAll('.gvc-spinner')
-  console.log('removeSpinner')
-  console.log('spinners', spinners.length)
   if (spinners.length > 0) {
     spinners.forEach(spinner => spinner.remove())
   }
@@ -117,26 +115,6 @@ function replaceLoadingWithMarkdownLink(
   textArea.selectionStart = textArea.selectionEnd = insertPos
   textArea.focus()
 }
-
-// function injectMarkdownLink(textArea: HTMLTextAreaElement, name: string, href: string): void {
-//   const markdownLink = `\n\n[${name}](${href})\n\n`
-
-//   // Check if the browser supports `selectionStart` and `selectionEnd`
-
-//   const startPos = textArea.selectionStart
-//   const endPos = textArea.selectionEnd
-//   const beforeText = textArea.value.substring(0, startPos)
-//   const afterText = textArea.value.substring(endPos)
-
-//   // Insert the markdown link where the cursor is, or at the end if no selection
-//   textArea.value = beforeText + markdownLink + afterText
-
-//   // Move the cursor to the end of the new link
-//   textArea.selectionStart = textArea.selectionEnd = startPos + markdownLink.length
-
-//   // Optionally, focus the textarea
-//   textArea.focus()
-// }
 
 const getRepositoryId = () => {
   const repository_id = document
@@ -210,15 +188,57 @@ const uploadFile = (textAreaElement: HTMLTextAreaElement, blob: Blob, fileName: 
   }
 }
 
-export const onFileInputChange = (e: Event) => {
+export const getTextAreaElement = (inputElement: Element) => {
+  const inputId = inputElement.id
+  // remove first 3 characters of inputId
+  const textAreaId = inputId.substring(3, inputId.length) // Removes fc- from 'fc-issuecomment-1892704184'
+  const textAreaElement = document.getElementById(textAreaId) as HTMLTextAreaElement | undefined
+
+  return textAreaElement
+}
+
+const handleUIFileUpload = (file: File, textAreaElement: HTMLTextAreaElement) => {
+  if (file.size > TRIGGER_SIZE) {
+    displayLoadingWithSpinner(textAreaElement, `Compressing [${file.name}]`)
+    execCommand('compress_file', {
+      file,
+    })
+      .then(({ file: compressedFile }) => {
+        console.log('compressedFile', compressedFile)
+        console.log('finish compressed video')
+        if (compressedFile) {
+          updateLoadingText(textAreaElement, `Compressing [${file.name}]`, `Uploading [${compressedFile.name}]`)
+
+          uploadFile(textAreaElement, compressedFile, compressedFile.name)
+        }
+      })
+      .catch(err => {
+        console.log('err', err)
+      })
+  }
+}
+
+const handleOnFiles = (files, textAreaElement) => {
+  if (files && files.length > 0) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files.item(i)
+      if (!file) {
+        throw new Error('file not found')
+      }
+
+      if (file.type && file.type.includes('video')) {
+        handleUIFileUpload(file, textAreaElement)
+      }
+    }
+  }
+}
+
+export const onFileInputChange = (e: Event, textAreaElement: HTMLTextAreaElement) => {
   const target = e.target as HTMLInputElement
 
   if (!target || target?.type !== 'file') {
     return
   }
-
-  // issuecomment-
-  // fc-issuecomment-1892704184-body
 
   if (target && target.type === 'file') {
     console.log('input element', e.target)
@@ -227,53 +247,44 @@ export const onFileInputChange = (e: Event) => {
     e.stopPropagation()
     e.preventDefault()
 
-    const inputId = target.id
-    // remove first 3 characters of inputId
-    const textAreaId = inputId.substring(3, inputId.length) // Removes fc- from 'fc-issuecomment-1892704184'
-    const textAreaElement = document.getElementById(textAreaId) as HTMLTextAreaElement
-
     if (!textAreaElement) {
       throw new Error('textAreaElement not found')
     }
 
+    // Handle File Input
     const files = target.files
     if (!files) {
       throw new Error('files not found')
     }
 
-    // Iterate over the FileList
-    for (let i = 0; i < files.length; i++) {
-      const file = files.item(i)
-      if (!file) {
-        throw new Error('file not found')
-      }
+    handleOnFiles(files, textAreaElement)
+  }
+}
 
-      if (file.type) {
-        // Check if the file type includes 'video'
-        if (file.type.includes('video')) {
-          e.stopPropagation()
-          e.preventDefault()
+export const onTextAreaDrop = (event: DragEvent, textAreaElement: HTMLTextAreaElement) => {
+  event.stopPropagation()
+  event.preventDefault()
 
-          if (file.size > TRIGGER_SIZE) {
-            displayLoadingWithSpinner(textAreaElement, `Compressing [${file.name}]`)
-            execCommand('compress_file', {
-              file,
-            })
-              .then(({ file: compressedFile }) => {
-                console.log('compressedFile', compressedFile)
-                console.log('finish compressed video')
-                if (compressedFile) {
-                  updateLoadingText(textAreaElement, `Compressing [${file.name}]`, `Uploading [${compressedFile.name}]`)
+  // Ensure that dataTransfer is not null
+  if (event.dataTransfer) {
+    const files = event.dataTransfer.files
+    handleOnFiles(files, textAreaElement)
+    // Loop through the files
+  }
+}
 
-                  uploadFile(textAreaElement, compressedFile, compressedFile.name)
-                }
-              })
-              .catch(err => {
-                console.log('err', err)
-              })
-          }
-        }
-      }
-    }
+// export const handleEventWithTextArea = <E extends Event>(
+//   textAreaElement: HTMLTextAreaElement,
+//   handleEvent: (e: E, textAreaElement: HTMLTextAreaElement) => void,
+// ) => {
+//   return handleEvent(e, textAreaElement)
+// }
+
+export const handleEventWithTextArea = <E extends Event>(
+  textAreaElement: HTMLTextAreaElement,
+  handleEvent: (e: E, textAreaElement: HTMLTextAreaElement) => void,
+) => {
+  return (e: E) => {
+    handleEvent(e, textAreaElement)
   }
 }
