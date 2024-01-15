@@ -20,11 +20,11 @@ const init = async () => {
     new Promise<{ token: string }>((resolve, reject) => {
       try {
         if (nativeMessageClient) {
-          console.error('Native Message Client already exists')
-
           // Get the existing token
           getToken().then(token => {
-            console.log('existing token: ' + token)
+            if (!token) {
+              throw new Error('No token found')
+            }
             resolve({ token })
           })
         } else {
