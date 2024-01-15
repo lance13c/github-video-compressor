@@ -148,7 +148,7 @@ def start_subprocess(ws):
     global proc
     current_directory = os.path.dirname(os.path.realpath(__file__))
     project_root = find_project_root(current_directory, '.github')
-    electron_path = os.path.join(project_root, "node_modules/electron/dist/Electron.app/Contents/MacOS/Electron")
+    electron_path = os.path.join(project_root, "app/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron")
     main_script_path =  os.path.join(project_root, "app/node_modules/.dev/main/index.js")
 
     # Set environment variables for the subprocess

@@ -116,7 +116,7 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
 
       sendDebugMessage('debug - name', req.file.originalname)
       sendDebugMessage('debug - path', req.file.path)
-      sendDebugMessage('debug - upload input path', fs.readdirSync('uploads').join(', '))
+      sendDebugMessage('debug - upload input path', fs.readdirSync(uploadsDir).join(', '))
       // @ts-expect-error -- test token
       sendDebugMessage('debug - token', req?.token)
       sendDebugMessage('debug - file', req.file)
