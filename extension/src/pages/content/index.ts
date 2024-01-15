@@ -2,17 +2,17 @@
   await import('@pages/content/ui')
   await import('@pages/content/injected')
   const {
-    onFileInputChange,
-    addEventListenerWrapper,
-    removeAllEventListeners,
+    handleFileInputElementChange,
+    addDomEventListener,
+    clearAllDomEventListeners,
     getTextAreaElement,
     handleEventWithTextArea,
-    onTextAreaDrop,
+    handleTextAreaDrop,
   } = await import('@root/src/pages/content/domains/github/ui.util')
 
   const resetAllFileUploadListeners = () => {
     const fileInputs = document.querySelectorAll('input[type=file]')
-    removeAllEventListeners()
+    clearAllDomEventListeners()
 
     fileInputs.forEach(fileInput => {
       const textAreaElement = getTextAreaElement(fileInput)
@@ -21,14 +21,14 @@
       }
 
       // File Input
-      addEventListenerWrapper(fileInput, 'change', handleEventWithTextArea(textAreaElement, onFileInputChange))
+      addDomEventListener(fileInput, 'change', handleEventWithTextArea(textAreaElement, handleFileInputElementChange))
 
       // Drag and Drop
-      addEventListenerWrapper(textAreaElement, 'dragover', (event: DragEvent) => {
+      addDomEventListener(textAreaElement, 'dragover', (event: DragEvent) => {
         event.stopPropagation()
         event.preventDefault()
       })
-      addEventListenerWrapper(textAreaElement, 'drop', handleEventWithTextArea(textAreaElement, onTextAreaDrop))
+      addDomEventListener(textAreaElement, 'drop', handleEventWithTextArea(textAreaElement, handleTextAreaDrop))
     })
   }
 

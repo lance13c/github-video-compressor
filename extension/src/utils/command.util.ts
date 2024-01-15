@@ -5,6 +5,10 @@ const COMMAND_MAP = {
   compress_file: sendFileToServer,
 }
 
+export const closeNativeApp = async () => {
+  return stopSession()
+}
+
 export const execCommand = async <T extends keyof typeof COMMAND_MAP>(
   commandName: T,
   commandOptions: Omit<Parameters<(typeof COMMAND_MAP)[T]>[0], 'token'>,
@@ -17,9 +21,6 @@ export const execCommand = async <T extends keyof typeof COMMAND_MAP>(
     token,
   })
   console.debug('result', result)
-
-  const success = await stopSession()
-  console.debug('stop session success', success)
 
   return result
 }
