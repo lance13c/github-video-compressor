@@ -19,12 +19,14 @@
     "compile:packageJSON": "node ./bin/modules/postbuild/index.js",
     "prebuild": "run-s compile:app compile:packageJSON",
     "build": "./node_modules/.bin/electron-builder",
+    "build:sign": "npx ts-node ./scripts/sign.ts --esModuleInterop --resolveJsonModule",
     "postinstall": "run-s prebuild install:deps",
     "install:deps": "electron-builder install-app-deps",
     "make:release": "node ./bin/modules/release/index.js",
     "release": "electron-builder --publish always"
   },
   "dependencies": {
+    "@electron/osx-sign": "^1.0.5",
     "body-parser": "^1.20.2",
     "chokidar": "^3.5.3",
     "cors": "^2.8.5",
