@@ -1,6 +1,6 @@
 ;(async () => {
   await import('@pages/content/ui')
-  await import('@pages/content/injected')
+  // await import('@pages/content/injected')
   const {
     handleFileInputElementChange,
     addDomEventListener,
