@@ -13,3 +13,9 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
+
+#app-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
