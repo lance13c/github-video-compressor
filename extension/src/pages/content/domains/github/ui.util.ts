@@ -138,7 +138,7 @@ const uploadFileToGithub = async (textAreaElement: HTMLTextAreaElement, fileBlob
 
   if (fileBlob) {
     const file = new File([fileBlob], fileName, { type: fileBlob.type })
-    console.log('Uploading file:', fileName)
+    console.debug('Uploading file:', fileName)
 
     const repoId = getRepositoryId()
     const csrfToken = getAuthenticityToken()
@@ -151,7 +151,7 @@ const uploadFileToGithub = async (textAreaElement: HTMLTextAreaElement, fileBlob
       content_type: file.type,
       repository_id: repoId,
       file,
-      imageUploadCompleteCallback: () => console.log('Upload complete'),
+      imageUploadCompleteCallback: () => {},
     })
 
     if (!imageResponse) {
@@ -189,9 +189,6 @@ const processFileUpload = async (file: File, textAreaElement: HTMLTextAreaElemen
     try {
       showLoadingSpinner(textAreaElement, `Compressing [${file.name}]`)
       const { file: compressedFile } = await execCommand('compress_file', { file })
-
-      console.log('compressedFile.name', compressedFile.name)
-      console.log('file.name', file.name)
 
       await updateSpinnerLoadingText(
         textAreaElement,

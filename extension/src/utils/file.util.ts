@@ -29,11 +29,8 @@ export const sendFileToServer: Command<SendFileToServerOptions, Promise<SendFile
     body: formData, // Send the file in a FormData object
   })
 
-  console.log('send file res', response)
-
   if (response.ok) {
     const blob = await response.blob()
-    console.log('output blob size', blob.size)
 
     return {
       file: new File([blob], `output-${file.name}`, {

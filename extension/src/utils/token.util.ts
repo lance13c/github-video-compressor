@@ -18,7 +18,6 @@ export const getToken = async () => {
         if (!result.token) {
           throw new Error(`Error getting auth token`)
         }
-        console.log('get token:', result.token)
 
         resolve(result.token)
       }

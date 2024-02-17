@@ -14,13 +14,11 @@ export const execCommand = async <T extends keyof typeof COMMAND_MAP>(
   commandOptions: Omit<Parameters<(typeof COMMAND_MAP)[T]>[0], 'token'>,
 ) => {
   const { token } = await startSession()
-  console.log('exec command token', token)
   // command
   const result = await COMMAND_MAP[commandName]({
     ...commandOptions,
     token,
   })
-  console.debug('result', result)
 
   return result
 }

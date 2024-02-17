@@ -11,7 +11,9 @@ const manifest = {
   description: packageJson.description,
   author: 'dominic cicilio',
   permissions: ['cookies', 'nativeMessaging', 'storage'],
-  host_permissions: ['https://github.com/*'],
+  content_security_policy: {
+    extension_pages: "script-src 'self'; object-src 'self'",
+  },
   options_page: 'src/pages/options/index.html',
   background: {
     service_worker: 'src/pages/background/index.js',
@@ -26,7 +28,7 @@ const manifest = {
   },
   content_scripts: [
     {
-      matches: ['http://*/*', 'https://*/*', '<all_urls>'],
+      matches: ['https://www.github.com/*', 'https://github.com/*'],
       // KEY for cache invalidation
       js: ['src/pages/content/index.js'],
       css: ['assets/css/contentStyle<KEY>.chunk.css'],
