@@ -18,7 +18,7 @@ export const sendFileToServer: Command<SendFileToServerOptions, Promise<SendFile
   const formData = new FormData()
   formData.append('file', file)
 
-  console.log('token exists', !!token)
+  console.debug('token exists', !!token)
 
   const response = await fetch(`http://127.0.0.1:${port}/upload`, {
     method: 'POST',
