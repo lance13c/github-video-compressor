@@ -9,11 +9,9 @@ const manifest = {
   name: packageJson.name,
   version: packageJson.version,
   description: packageJson.description,
-  permissions: ['cookies', 'nativeMessaging', 'storage', 'sidePanel'],
+  author: 'dominic cicilio',
+  permissions: ['cookies', 'nativeMessaging', 'storage'],
   host_permissions: ['https://github.com/*'],
-  side_panel: {
-    default_path: 'src/pages/sidepanel/index.html',
-  },
   options_page: 'src/pages/options/index.html',
   background: {
     service_worker: 'src/pages/background/index.js',
