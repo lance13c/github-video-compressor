@@ -1,7 +1,7 @@
-import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
-import { Container, Heading, Button } from 'renderer/components'
+import { Button, Container, Heading } from 'renderer/components'
 import { useWindowStore } from 'renderer/store'
 
 // The "App" comes from the context bridge in preload/index.ts
@@ -33,16 +33,11 @@ export function MainScreen() {
       <h2>It's time to build something awesome! ✨</h2>
 
       <nav>
-        <Button
-          className={store.isOpen ? 'disabled' : ''}
-          onClick={openAboutWindow}
-        >
+        <Button className={store.isOpen ? 'disabled' : ''} onClick={openAboutWindow}>
           Open About Window
         </Button>
 
-        <Button onClick={() => navigate('anotherScreen')}>
-          Go to Another screen
-        </Button>
+        <Button onClick={() => navigate('anotherScreen')}>Go to Another screen</Button>
       </nav>
     </Container>
   )
