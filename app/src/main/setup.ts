@@ -5,6 +5,8 @@ import * as fs from 'fs'
 import { sendDebugMessage } from 'main/dev_websockets'
 import * as os from 'os'
 import * as path from 'path'
+import url from 'url'
+
 import { APP_NAME } from 'shared/utils/constant'
 
 // Initialize electron-store
@@ -165,14 +167,18 @@ const showSplashScreen = () => {
     },
   })
 
-  splashWindow.loadFile('.') // Adjust the path as necessary
+  const startURL = url.format({
+    slashes: true,
+    hash: '/install-chrome-extension',
+  })
+
+  splashWindow.loadFile(startURL) // Adjust the path as necessary
 
   splashWindow.on('closed', () => (splashWindow = null))
 }
 
 export const checkSetup = async (app: Electron.App) => {
+  showSplashScreen()
   await checkAndCreateChromeExtensionManifest(app)
   await initFFmpegInstallation()
-
-  isFirstRun() ? showSplashScreen() : null
 }

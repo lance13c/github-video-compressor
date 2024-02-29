@@ -21,11 +21,11 @@ export async function makeAppSetup(createWindow: () => Promise<BrowserWindow>) {
       ? (window = await createWindow())
       : BrowserWindow.getAllWindows()
           ?.reverse()
-          .forEach(window => window.restore())
+          .forEach(window => window.restore()),
   )
 
   app.on('web-contents-created', (_, contents) =>
-    contents.on('will-navigate', (event, _) => !ENVIRONMENT.IS_DEV && event.preventDefault())
+    contents.on('will-navigate', (event, _) => !ENVIRONMENT.IS_DEV && event.preventDefault()),
   )
 
   app.on('window-all-closed', () => !PLATFORM.IS_MAC && app.quit())
