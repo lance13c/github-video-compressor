@@ -37,7 +37,7 @@ export function MainScreen() {
           Open About Window
         </Button>
 
-        <Button onClick={() => navigate('anotherScreen')}>Go to Another screen</Button>
+        <Button onClick={() => navigate('setupScreen')}>Go to setup screen</Button>
       </nav>
     </Container>
   )

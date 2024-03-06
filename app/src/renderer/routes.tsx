@@ -1,6 +1,6 @@
 import { Route, Router } from 'electron-router-dom'
 
-import { AboutScreen, AnotherScreen, InstallChromeExtension, MainScreen } from 'renderer/screens'
+import { InstallChromeExtension, MainScreen, SetupScreen } from 'renderer/screens'
 
 export function AppRoutes() {
   return (
@@ -8,10 +8,9 @@ export function AppRoutes() {
       main={
         <>
           <Route path="/" element={<MainScreen />} />
-          <Route path="/anotherScreen" element={<AnotherScreen />} />
         </>
       }
-      about={<Route path="/" element={<AboutScreen />} />}
+      setup={<Route path="/setup" element={<SetupScreen />} />}
       installChromeExtension={<Route path="/install-chrome-extension" element={<InstallChromeExtension />} />}
     />
   )

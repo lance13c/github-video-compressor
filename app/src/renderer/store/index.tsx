@@ -1,4 +1,4 @@
-import { useContext, createContext, useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 
 export interface WindowStore {
   about: {
@@ -13,17 +13,13 @@ export function useWindowStore() {
   return useContext(WindowStoreContext)
 }
 
-export function WindowStoreProvider({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export function WindowStoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState({
     about: { isOpen: false, setAboutWindowState },
   })
 
   function setAboutWindowState(value: boolean) {
-    setState((state) => ({
+    setState(state => ({
       ...state,
       about: {
         ...state.about,
@@ -32,9 +28,5 @@ export function WindowStoreProvider({
     }))
   }
 
-  return (
-    <WindowStoreContext.Provider value={state}>
-      {children}
-    </WindowStoreContext.Provider>
-  )
+  return <WindowStoreContext.Provider value={state}>{children}</WindowStoreContext.Provider>
 }

@@ -1,4 +1,4 @@
 export * from './About'
-export * from './Another'
 export * from './InstallChromeExtension'
 export * from './Main'
+export * from './Setup'
