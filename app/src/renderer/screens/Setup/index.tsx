@@ -34,7 +34,7 @@ export function SetupScreen() {
 
   function handleSetupComplete() {
     // Perform necessary actions when setup is complete
-    navigate('mainScreen')
+    // navigate('mainScreen')
   }
 
   return (

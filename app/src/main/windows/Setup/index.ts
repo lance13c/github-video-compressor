@@ -21,13 +21,13 @@ export async function SetupWindow() {
     },
   })
 
-  // Load the setup page URL
-  const setupURL = ENVIRONMENT.IS_DEV
-    ? 'http://localhost:4927/setup'
-    : `file://${join(__dirname, '../../renderer/setup.html')}`
+  // // Load the setup page URL
+  // const setupURL = ENVIRONMENT.IS_DEV
+  //   ? 'http://localhost:4927/setup'
+  //   : `file://${join(__dirname, '../../renderer/setup.html')}`
 
-  console.log('Setting up', setupURL)
-  window.loadURL(setupURL)
+  // console.log('Setting up', setupURL)
+  window.loadURL('main')
 
   window.webContents.on('did-finish-load', () => {
     if (ENVIRONMENT.IS_DEV) {
