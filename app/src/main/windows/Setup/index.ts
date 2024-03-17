@@ -4,18 +4,19 @@ import { join } from 'path'
 import { ENVIRONMENT } from 'shared/constants'
 import { displayName } from '~/package.json'
 
-export async function SetupWindow() {
+export function SetupWindow() {
   const window = createWindow({
     id: 'setup',
     title: `${displayName} - Setup`,
     width: 800,
     height: 600,
-    show: false,
+    show: true,
     center: true,
     movable: true,
     resizable: false,
     alwaysOnTop: true,
     autoHideMenuBar: true,
+    roundedCorners: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
     },
@@ -27,7 +28,7 @@ export async function SetupWindow() {
   //   : `file://${join(__dirname, '../../renderer/setup.html')}`
 
   // console.log('Setting up', setupURL)
-  window.loadURL('main')
+  window.loadURL('http://localhost:4927/setup')
 
   window.webContents.on('did-finish-load', () => {
     if (ENVIRONMENT.IS_DEV) {

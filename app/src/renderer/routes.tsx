@@ -7,7 +7,8 @@ export function AppRoutes() {
     <Router
       main={
         <>
-          <Route path="/" element={<MainScreen />} />
+          <Route path="/" element={<SetupScreen />} />
+          <Route path="/main" element={<MainScreen />} />
         </>
       }
       setup={<Route path="/setup" element={<SetupScreen />} />}

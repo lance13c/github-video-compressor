@@ -14,6 +14,7 @@ const port = 7777
 
 makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
+  registerAboutWindowCreationByIPC()
   await checkSetup(app)
 
   const isDev = process.argv.includes('--development')
@@ -50,8 +51,6 @@ makeAppWithSingleInstanceLock(async () => {
       server.close()
       app.quit()
     })
-
-    registerAboutWindowCreationByIPC()
   } catch (e) {
     // @ts-ignore
     sendDebugMessage('error', e?.message || 'unknown')

@@ -8,7 +8,7 @@ import * as path from 'path'
 import url from 'url'
 
 import { makeAppSetup } from 'main/factories'
-import { SetupWindow } from 'main/windows'
+import { MainWindow } from 'main/windows'
 import { APP_NAME } from 'shared/utils/constant'
 
 // Initialize electron-store
@@ -180,7 +180,7 @@ const showSplashScreen = () => {
 }
 
 export const checkSetup = async (app: Electron.App) => {
-  await makeAppSetup(SetupWindow)
+  await makeAppSetup(MainWindow)
   await checkAndCreateChromeExtensionManifest(app)
   await initFFmpegInstallation()
 }
