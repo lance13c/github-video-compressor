@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { CheckIcon, GearIcon } from '@radix-ui/react-icons'
 import { useEffect, useState } from 'react'
@@ -10,32 +9,21 @@ const { App } = window
 
 export function SetupScreen() {
   const navigate = useNavigate()
-  const store = useWindowStore()
+  const store = useWindowStore().setup
   const [setupProgress, setSetupProgress] = useState(0)
   const [isSetupComplete, setIsSetupComplete] = useState(false)
 
   useEffect(() => {
-    // Simulating setup progress
-    const timer = setInterval(() => {
-      setSetupProgress(prevProgress => {
-        if (prevProgress >= 100) {
-          clearInterval(timer)
-          setIsSetupComplete(true)
-          return 100
-        }
-        return prevProgress + 10
-      })
-    }, 500)
+    console.log('init use effect')
+    const removeChannel = App.whenFfmpegInstalling(data => {
+      console.log('hit whenFfmpegInstalling')
+      console.log(data)
+    })
 
     return () => {
-      clearInterval(timer)
+      removeChannel()
     }
   }, [])
-
-  function handleSetupComplete() {
-    // Perform necessary actions when setup is complete
-    // navigate('mainScreen')
-  }
 
   return (
     <Container>
@@ -51,7 +39,6 @@ export function SetupScreen() {
             <CheckIcon className="mr-2" />
             Setup Complete!
           </p>
-          <Button onClick={handleSetupComplete}>Get Started</Button>
         </>
       ) : (
         <p>Setting up...</p>

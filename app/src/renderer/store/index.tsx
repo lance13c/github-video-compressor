@@ -5,6 +5,10 @@ export interface WindowStore {
     isOpen: boolean
     setAboutWindowState: (value: boolean) => void
   }
+  setup: {
+    isFfmpegInstalled: boolean
+    setFfmpegInstalledState: (value: boolean) => void
+  }
 }
 
 const WindowStoreContext = createContext({} as WindowStore)
@@ -16,6 +20,7 @@ export function useWindowStore() {
 export function WindowStoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState({
     about: { isOpen: false, setAboutWindowState },
+    setup: { isFfmpegInstalled: false, setFfmpegInstalledState },
   })
 
   function setAboutWindowState(value: boolean) {
@@ -24,6 +29,16 @@ export function WindowStoreProvider({ children }: { children: React.ReactNode })
       about: {
         ...state.about,
         isOpen: value,
+      },
+    }))
+  }
+
+  function setFfmpegInstalledState(value: boolean) {
+    setState(state => ({
+      ...state,
+      setup: {
+        ...state.setup,
+        isFfmpegInstalled: value,
       },
     }))
   }

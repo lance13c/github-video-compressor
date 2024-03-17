@@ -1,2 +1,3 @@
-export * from './about/when-close'
-export * from './about/create'
+export * from './setup/create'
+export * from './setup/ffmpeg-installing'
+export * from './setup/when-close'

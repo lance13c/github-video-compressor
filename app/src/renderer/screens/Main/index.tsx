@@ -14,15 +14,15 @@ export function MainScreen() {
   useEffect(() => {
     App.sayHelloFromBridge()
 
-    App.whenAboutWindowClose(({ message }) => {
-      console.log(message)
+    // App.whenAboutWindowClose(({ message }) => {
+    //   console.log(message)
 
-      store.setAboutWindowState(false)
-    })
+    //   store.setAboutWindowState(false)
+    // })
   }, [])
 
   function openAboutWindow() {
-    App.createAboutWindow()
+    // App.createAboutWindow()
     store.setAboutWindowState(true)
   }
 

@@ -4,25 +4,30 @@ import Store from 'electron-store'
 import * as fs from 'fs'
 import { sendDebugMessage } from 'main/dev_websockets'
 import * as os from 'os'
-import * as path from 'path'
-import url from 'url'
+import path from 'path'
 
 import { makeAppSetup } from 'main/factories'
 import { MainWindow } from 'main/windows'
+import { IPC } from 'shared/constants/ipc'
 import { APP_NAME } from 'shared/utils/constant'
 
 // Initialize electron-store
 const store = new Store()
 
-function executeCommand(command: string): Promise<void> {
+const IPC_FFMPEG_INSTALLING = IPC.WINDOWS.SETUP.FFMPEG_INSTALLING
+
+function executeCommand(command: string, log?: (log: string) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     exec(command, (error, stdout, stderr) => {
       if (error) {
-        sendDebugMessage(`error`, `Error executing command: ${error}`)
+        log?.(`Error executing command: ${error}`)
+        console.error(`error`, `Error executing command: ${error}`)
         reject(error)
         return
       }
-      sendDebugMessage('info', `Command executed successfully: ${stdout}`)
+
+      log?.(`Command executed successfully: ${stdout}`)
+      console.log('info', `Command executed successfully: ${stdout}`)
       resolve()
     })
   })
@@ -46,20 +51,30 @@ const promptUserForInstallation = (message: string, title: string): Promise<bool
     })
 }
 
-const checkFFmpegInstalled = (): Promise<boolean> => {
+const checkFFmpegInstalled = (window?: BrowserWindow): Promise<boolean> => {
   return executeCommand('ffmpeg -version')
     .then(() => true) // ffmpeg is installed
     .catch(() => false) // ffmpeg is not installed
 }
 
-const installFFmpegMac = async () => {
+const installFFmpegMac = async (window: BrowserWindow) => {
+  console.log('hit installFFmpegMac')
   const isInstalled = await checkFFmpegInstalled()
-  if (isInstalled) return
+  if (isInstalled) {
+    console.log('--------------- installed')
+    await window.webContents.send(IPC_FFMPEG_INSTALLING, 'FFmpeg already installed')
+
+    return
+  }
+
+  console.log('FFMpeg not already installed on Mac')
 
   promptUserForInstallation('ffmpeg is required but not installed. Would you like to install it now?', 'Install ffmpeg')
     .then(userAgreed => {
       if (userAgreed) {
-        executeCommand('brew install ffmpeg').catch(error => console.error(error))
+        executeCommand('brew install ffmpeg', log => {
+          window.webContents.send(log)
+        }).catch(error => console.error(error))
         return true
       } else {
         sendDebugMessage('info', 'User declined to install ffmpeg')
@@ -71,9 +86,13 @@ const installFFmpegMac = async () => {
     })
 }
 
-const installFFmpegLinux = async () => {
+const installFFmpegLinux = async (window: BrowserWindow) => {
   const isInstalled = await checkFFmpegInstalled()
-  if (isInstalled) return
+  if (isInstalled) {
+    window.webContents.send('FFmpeg already installed')
+
+    return
+  }
 
   promptUserForInstallation(
     'ffmpeg is required but not installed. Would you like to install it now?',
@@ -87,9 +106,13 @@ const installFFmpegLinux = async () => {
   })
 }
 
-const installFFmpegWindows = async () => {
+const installFFmpegWindows = async (window: BrowserWindow) => {
   const isInstalled = await checkFFmpegInstalled()
-  if (isInstalled) return
+  if (isInstalled) {
+    // Update storage that is already installed
+    window.webContents.send('FFmpeg already installed')
+    return
+  }
 
   return promptUserForInstallation(
     'ffmpeg is required but not installed. Would you like to install it now using Chocolatey?',
@@ -103,15 +126,15 @@ const installFFmpegWindows = async () => {
   })
 }
 
-const initFFmpegInstallation = async () => {
+const initFFmpegInstallation = async (window: BrowserWindow) => {
   const platform = os.platform()
   switch (platform) {
     case 'darwin':
-      return await installFFmpegMac()
+      return await installFFmpegMac(window)
     case 'win32':
-      return await installFFmpegWindows()
+      return await installFFmpegWindows(window)
     case 'linux':
-      return await installFFmpegLinux()
+      return await installFFmpegLinux(window)
     default:
       throw new Error(`Unsupported platform: ${platform}`)
   }
@@ -120,13 +143,20 @@ const initFFmpegInstallation = async () => {
 function checkAndCreateChromeExtensionManifest(app: Electron.App) {
   const platform = os.platform()
 
-  const chromeExtensionManifestPath: Partial<Record<NodeJS.Platform, string>> = {
-    win32: path.join(process.env.APPDATA!, 'Google/Chrome/User Data/Default/Extensions'),
-    darwin: path.join(os.homedir(), 'Library/Application Support/Google/Chrome/Default/Extensions'),
-    linux: path.join(os.homedir(), '.config/google-chrome/Default/Extensions'),
+  const getChromeExtensionManifestPath = (platform: NodeJS.Platform) => {
+    if (platform === 'win32') {
+      const appDataPath = app.getPath('appData')
+      return path.join(appDataPath, 'Google/Chrome/User Data/NativeMessagingHosts')
+    } else if (platform === 'darwin') {
+      return path.join(os.homedir(), `Library/Application\ Support/Google/Chrome/NativeMessagingHosts`)
+    } else if (platform === 'linux') {
+      return path.join(os.homedir(), '.config/google-chrome/NativeMessagingHosts')
+    } else {
+      throw new Error(`Unsupported platform: ${platform}`)
+    }
   }
 
-  const manifestPath = chromeExtensionManifestPath[platform]
+  const manifestPath = getChromeExtensionManifestPath(platform)
 
   // Check if manifestPath is defined for the current platform
   if (!manifestPath) {
@@ -141,14 +171,16 @@ function checkAndCreateChromeExtensionManifest(app: Electron.App) {
     if (!fs.existsSync(manifestPath)) {
       fs.mkdirSync(manifestPath, { recursive: true })
     }
-    const sourceManifestPath = path.join(app.getAppPath(), 'resources', 'manifest.json')
-    fs.copyFileSync(sourceManifestPath, manifestFile)
+    const sourceManifestPath = path.join(app.getAppPath(), '/src/resources/public', `${APP_NAME}.json`)
+    fs.copyFileSync(sourceManifestPath, manifestPath)
     return true
   } else {
     return false
   }
 }
 
+// /Users/dominic.cicilio/Documents/repos/github-video-compressor/app/src/resources/public/com.dominic_cicilio.github_video_compressor.json
+// /Users/dominic.cicilio/Documents/repos/github-video-compressor/app/src/resources/public/com.dominic_cicilio.github_video_compressor.json
 const isFirstRun = (): boolean => {
   // Check if 'firstRun' key exists
   if (store.get('firstRun') === undefined) {
@@ -169,18 +201,14 @@ const showSplashScreen = () => {
     },
   })
 
-  const startURL = url.format({
-    slashes: true,
-    hash: '/install-chrome-extension',
-  })
-
-  splashWindow.loadFile(startURL) // Adjust the path as necessary
-
   splashWindow.on('closed', () => (splashWindow = null))
 }
 
 export const checkSetup = async (app: Electron.App) => {
-  await makeAppSetup(MainWindow)
-  await checkAndCreateChromeExtensionManifest(app)
-  await initFFmpegInstallation()
+  console.log('hit checkSetup')
+  const mainWindow = await makeAppSetup(MainWindow)
+  await setTimeout(async () => {
+    await checkAndCreateChromeExtensionManifest(app)
+    await initFFmpegInstallation(mainWindow)
+  }, 1000)
 }
