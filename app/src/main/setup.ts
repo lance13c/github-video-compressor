@@ -18,17 +18,24 @@ const IPC_FFMPEG_INSTALLING = IPC.WINDOWS.SETUP.FFMPEG_INSTALLING
 
 function executeCommand(command: string, log?: (log: string) => void): Promise<void> {
   return new Promise((resolve, reject) => {
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        log?.(`Error executing command: ${error}`)
-        console.error(`error`, `Error executing command: ${error}`)
-        reject(error)
-        return
-      }
+    const execution = exec(command)
 
-      log?.(`Command executed successfully: ${stdout}`)
-      console.log('info', `Command executed successfully: ${stdout}`)
-      resolve()
+    execution.stdout?.on('data', data => {
+      console.log('Data:', data.toString())
+      log?.(`${data.toString()}\n`)
+    })
+
+    execution.stderr?.on('data', data => {
+      console.log('Error:', data.toString())
+      log?.(`Error: ${data.toString()}\n`)
+    })
+
+    execution.on('exit', code => {
+      if (code === 0 || code === 1 || code === -1) {
+        resolve()
+      } else {
+        reject()
+      }
     })
   })
 }
@@ -53,7 +60,10 @@ const promptUserForInstallation = (message: string, title: string): Promise<bool
 
 const checkFFmpegInstalled = (window?: BrowserWindow): Promise<boolean> => {
   return executeCommand('ffmpeg -version')
-    .then(() => true) // ffmpeg is installed
+    .then(res => {
+      console.log('res', res)
+      return true
+    }) // ffmpeg is installed
     .catch(() => false) // ffmpeg is not installed
 }
 
@@ -70,11 +80,13 @@ const installFFmpegMac = async (window: BrowserWindow) => {
   console.log('FFMpeg not already installed on Mac')
 
   promptUserForInstallation('ffmpeg is required but not installed. Would you like to install it now?', 'Install ffmpeg')
-    .then(userAgreed => {
+    .then(async userAgreed => {
       if (userAgreed) {
-        executeCommand('brew install ffmpeg', log => {
-          window.webContents.send(log)
+        await executeCommand('brew install ffmpeg', mes => {
+          console.log('hit info')
+          window.webContents.send(IPC_FFMPEG_INSTALLING, mes)
         }).catch(error => console.error(error))
+
         return true
       } else {
         sendDebugMessage('info', 'User declined to install ffmpeg')
