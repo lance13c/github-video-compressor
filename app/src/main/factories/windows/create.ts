@@ -1,9 +1,9 @@
 import { BrowserWindow } from 'electron'
 import { createFileRoute, createURLRoute } from 'electron-router-dom'
 import { join } from 'path'
-import { ENVIRONMENT } from 'shared/constants'
+import { ENVIRONMENT } from '~/src/shared/constants'
 
-import { WindowProps } from 'shared/types'
+import { WindowProps } from '~/src/shared/types'
 
 export function createWindow({ id, ...settings }: WindowProps) {
   const window = new BrowserWindow(settings)

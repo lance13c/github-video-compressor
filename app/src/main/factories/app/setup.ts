@@ -2,8 +2,8 @@ import { app, BrowserWindow } from 'electron'
 
 import { installExtension, REACT_DEVELOPER_TOOLS } from 'electron-extension-installer'
 
-import { ENVIRONMENT, PLATFORM } from 'shared/constants'
-import { makeAppId } from 'shared/utils'
+import { ENVIRONMENT, PLATFORM } from '~/src/shared/constants'
+import { makeAppId } from '~/src/shared/utils'
 
 export async function makeAppSetup(createWindow: () => Promise<BrowserWindow>) {
   if (ENVIRONMENT.IS_DEV) {

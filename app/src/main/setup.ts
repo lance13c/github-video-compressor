@@ -1,33 +1,40 @@
 import { exec } from 'child_process'
 import { BrowserWindow, dialog } from 'electron'
+
 import Store from 'electron-store'
 import * as fs from 'fs'
-import { sendDebugMessage } from 'main/dev_websockets'
 import * as os from 'os'
 import path from 'path'
+import { sendDebugMessage } from '~/src/main/dev_websockets'
 
-import { makeAppSetup } from 'main/factories'
-import { MainWindow } from 'main/windows'
-import { IPC } from 'shared/constants/ipc'
-import { APP_NAME } from 'shared/utils/constant'
+import { makeAppSetup } from '~/src/main/factories'
+import { MainWindow } from '~/src/main/windows'
+import { INSTALL_STATUS, IPC } from '~/src/shared/constants/ipc'
+import { APP_NAME } from '~/src/shared/utils/constant'
 
 // Initialize electron-store
 const store = new Store()
 
-const IPC_FFMPEG_INSTALLING = IPC.WINDOWS.SETUP.FFMPEG_INSTALLING
+const IPC_FFMPEG_STATUS = IPC.WINDOWS.SETUP.FFMPEG_INSTALL_STATUS
 
-function executeCommand(command: string, log?: (log: string) => void): Promise<void> {
+function executeCommand(
+  command: string,
+  logCallbacks?: {
+    onLog?: (log: string) => void
+    onError?: (error: string) => void
+  },
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const execution = exec(command)
 
     execution.stdout?.on('data', data => {
       console.log('Data:', data.toString())
-      log?.(`${data.toString()}\n`)
+      logCallbacks?.onLog?.(`${data.toString()}\n`)
     })
 
     execution.stderr?.on('data', data => {
       console.log('Error:', data.toString())
-      log?.(`Error: ${data.toString()}\n`)
+      logCallbacks?.onError?.(`Error: ${data.toString()}\n`)
     })
 
     execution.on('exit', code => {
@@ -68,23 +75,18 @@ const checkFFmpegInstalled = (window?: BrowserWindow): Promise<boolean> => {
 }
 
 const installFFmpegMac = async (window: BrowserWindow) => {
-  console.log('hit installFFmpegMac')
-  const isInstalled = await checkFFmpegInstalled()
-  if (isInstalled) {
-    console.log('--------------- installed')
-    await window.webContents.send(IPC_FFMPEG_INSTALLING, 'FFmpeg already installed')
-
-    return
-  }
-
-  console.log('FFMpeg not already installed on Mac')
-
   promptUserForInstallation('ffmpeg is required but not installed. Would you like to install it now?', 'Install ffmpeg')
     .then(async userAgreed => {
       if (userAgreed) {
-        await executeCommand('brew install ffmpeg', mes => {
-          console.log('hit info')
-          window.webContents.send(IPC_FFMPEG_INSTALLING, mes)
+        await executeCommand('brew install ffmpeg', {
+          onLog: mes => {
+            console.log('hit info', mes)
+            window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLING)
+          },
+          onError: mes => {
+            console.log('hit error', mes)
+            window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.FAILED)
+          },
         }).catch(error => console.error(error))
 
         return true
@@ -99,13 +101,6 @@ const installFFmpegMac = async (window: BrowserWindow) => {
 }
 
 const installFFmpegLinux = async (window: BrowserWindow) => {
-  const isInstalled = await checkFFmpegInstalled()
-  if (isInstalled) {
-    window.webContents.send('FFmpeg already installed')
-
-    return
-  }
-
   promptUserForInstallation(
     'ffmpeg is required but not installed. Would you like to install it now?',
     'Install ffmpeg',
@@ -119,13 +114,6 @@ const installFFmpegLinux = async (window: BrowserWindow) => {
 }
 
 const installFFmpegWindows = async (window: BrowserWindow) => {
-  const isInstalled = await checkFFmpegInstalled()
-  if (isInstalled) {
-    // Update storage that is already installed
-    window.webContents.send('FFmpeg already installed')
-    return
-  }
-
   return promptUserForInstallation(
     'ffmpeg is required but not installed. Would you like to install it now using Chocolatey?',
     'Install ffmpeg',
@@ -138,8 +126,25 @@ const installFFmpegWindows = async (window: BrowserWindow) => {
   })
 }
 
+const ALLOWED_PLATFORMS = ['darwin', 'win32', 'linux']
+
 const initFFmpegInstallation = async (window: BrowserWindow) => {
   const platform = os.platform()
+
+  if (!ALLOWED_PLATFORMS.includes(platform)) {
+    window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.FAILED)
+
+    throw new Error(`Unsupported platform: ${platform}`)
+  }
+
+  const isInstalled = await checkFFmpegInstalled()
+  if (isInstalled) {
+    console.log('--------------------installed')
+    // Update storage that is already installed
+    window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLED)
+    return
+  }
+
   switch (platform) {
     case 'darwin':
       return await installFFmpegMac(window)
@@ -219,8 +224,9 @@ const showSplashScreen = () => {
 export const checkSetup = async (app: Electron.App) => {
   console.log('hit checkSetup')
   const mainWindow = await makeAppSetup(MainWindow)
-  await setTimeout(async () => {
+  mainWindow.webContents.on('did-finish-load', async () => {
     await checkAndCreateChromeExtensionManifest(app)
     await initFFmpegInstallation(mainWindow)
-  }, 1000)
+    // The window needs some time to start up
+  })
 }

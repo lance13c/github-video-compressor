@@ -1,9 +1,8 @@
 import { BrowserWindow } from 'electron'
+import { displayName } from 'package.json'
 import { join } from 'path'
-
-import { createWindow } from 'main/factories'
-import { ENVIRONMENT } from 'shared/constants'
-import { displayName } from '~/package.json'
+import { createWindow } from '~/src/main/factories'
+import { ENVIRONMENT } from '~/src/shared/constants'
 
 export async function MainWindow() {
   const window = createWindow({

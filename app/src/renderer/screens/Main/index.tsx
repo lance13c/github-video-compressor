@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { Button, Container, Heading } from 'renderer/components'
-import { useWindowStore } from 'renderer/store'
+import { Button, Container, Heading } from '~/src/renderer/components'
+import { useWindowStore } from '~/src/renderer/store'
 
 // The "App" comes from the context bridge in preload/index.ts
 const { App } = window

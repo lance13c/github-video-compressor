@@ -1,6 +1,6 @@
 import { Route, Router } from 'electron-router-dom'
 
-import { MainScreen, SetupScreen } from 'renderer/screens'
+import { MainScreen, SetupScreen } from '~/src/renderer/screens'
 
 export function AppRoutes() {
   return (

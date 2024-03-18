@@ -4,12 +4,12 @@ import express, { Express, NextFunction, Request, Response } from 'express'
 import ffmpeg from 'fluent-ffmpeg'
 import fs from 'fs'
 import https from 'https'
-import { sendDebugMessage } from 'main/dev_websockets'
 import multer from 'multer'
 import path from 'path'
-import { generateHostKey, validateTokenMiddleware } from 'shared/utils/crypto.util'
-import { mimeTypeToExtension } from 'shared/utils/file.util'
 import { fileURLToPath } from 'url'
+import { sendDebugMessage } from '~/src/main/dev_websockets'
+import { generateHostKey, validateTokenMiddleware } from '~/src/shared/utils/crypto.util'
+import { mimeTypeToExtension } from '~/src/shared/utils/file.util'
 
 ffmpeg.setFfmpegPath('/opt/homebrew/bin/ffmpeg')
 

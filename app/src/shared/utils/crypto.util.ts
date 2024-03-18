@@ -1,7 +1,7 @@
 import { generateKeyPairSync, randomBytes } from 'crypto'
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
-import { sendDebugMessage } from 'main/dev_websockets'
+import { sendDebugMessage } from '~/src/main/dev_websockets'
 
 export const generateSecretKey = (length: number = 64): string => {
   return randomBytes(length).toString('hex')

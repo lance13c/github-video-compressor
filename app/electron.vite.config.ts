@@ -1,10 +1,9 @@
+import alias from '@rollup/plugin-alias'
+import reactPlugin from '@vitejs/plugin-react'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import { dirname, normalize, resolve } from 'path'
-
-import reactPlugin from '@vitejs/plugin-react'
 import injectProcessEnvPlugin from 'rollup-plugin-inject-process-env'
 import tsconfigPathsPlugin from 'vite-tsconfig-paths'
-
 import { main, resources } from './package.json'
 
 const [nodeModules, devFolder] = normalize(dirname(main)).split(/\/|\\/g)
@@ -15,12 +14,25 @@ const tsconfigPaths = tsconfigPathsPlugin({
   projects: [resolve('tsconfig.json')],
 })
 
+// https://github.com/fluent-ffmpeg/node-fluent-ffmpeg/issues/573#issuecomment-1288358850 - thx
+const rollupFluentPluginFix = alias({
+  entries: [{ find: './lib-cov/fluent-ffmpeg', replacement: './lib/fluent-ffmpeg' }],
+})
+
+console.log('tsconfigPaths:', tsconfigPaths)
+
 export default defineConfig({
   main: {
-    plugins: [tsconfigPaths, externalizeDepsPlugin()],
+    define: {
+      'process.env.FLUENTFFMPEG_COV': 0,
+    },
+
+    plugins: [tsconfigPaths],
 
     build: {
       rollupOptions: {
+        plugins: [rollupFluentPluginFix],
+
         input: {
           index: resolve('src/main/index.ts'),
         },
@@ -28,11 +40,17 @@ export default defineConfig({
         output: {
           dir: resolve(devPath, 'main'),
         },
+
+        external: ['ws'],
       },
     },
   },
 
   preload: {
+    define: {
+      'process.env.FLUENTFFMPEG_COV': 0,
+    },
+
     plugins: [tsconfigPaths, externalizeDepsPlugin()],
 
     build: {
@@ -44,6 +62,7 @@ export default defineConfig({
     define: {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       'process.platform': JSON.stringify(process.platform),
+      'process.env.FLUENTFFMPEG_COV': 0,
     },
 
     server: {

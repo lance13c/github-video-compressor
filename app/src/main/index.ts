@@ -1,9 +1,9 @@
 import { app } from 'electron'
 
 // import { sendDebugMessage } from 'main/dev_websockets'
-import { initWebSocketServer, sendDebugMessage } from 'main/dev_websockets'
-import { checkSetup } from 'main/setup'
-import { startHttpFileServer } from 'shared/utils/httpFileServer'
+import { initWebSocketServer, sendDebugMessage } from '~/src/main/dev_websockets'
+import { checkSetup } from '~/src/main/setup'
+import { startHttpFileServer } from '~/src/shared/utils/httpFileServer'
 import { makeAppWithSingleInstanceLock } from './factories'
 
 const port = 7777

@@ -14,6 +14,7 @@
     "lib": ["dom", "DOM.Iterable", "esnext"],
     "forceConsistentCasingInFileNames": true,
     "paths": {
+      "*": ["./node_modules/*"],
       "@root/*": ["./*"],
       "@utils/*": ["./src/utils/*"],
       "@shared/*": ["./src/shared/*"],

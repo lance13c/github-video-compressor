@@ -1,4 +1,4 @@
-import { Container, Heading } from 'renderer/components'
+import { Container, Heading } from '~/src/renderer/components'
 
 import styles from './styles.module.sass'
 
