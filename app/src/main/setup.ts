@@ -65,13 +65,18 @@ const promptUserForInstallation = (message: string, title: string): Promise<bool
     })
 }
 
-const checkFFmpegInstalled = (window?: BrowserWindow): Promise<boolean> => {
+const checkFFmpegInstalled = async (window: BrowserWindow): Promise<boolean> => {
   return executeCommand('ffmpeg -version')
     .then(res => {
-      console.log('res', res)
+      console.log('Res', res)
+      window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLED)
       return true
-    }) // ffmpeg is installed
-    .catch(() => false) // ffmpeg is not installed
+    })
+    .catch(err => {
+      console.log('Err', err)
+      window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.UNINSTALLED)
+      return false
+    })
 }
 
 const installFFmpegMac = async (window: BrowserWindow) => {
@@ -88,6 +93,8 @@ const installFFmpegMac = async (window: BrowserWindow) => {
             window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.FAILED)
           },
         }).catch(error => console.error(error))
+        console.log('hit after execution')
+        await checkFFmpegInstalled(window)
 
         return true
       } else {
@@ -137,13 +144,7 @@ const initFFmpegInstallation = async (window: BrowserWindow) => {
     throw new Error(`Unsupported platform: ${platform}`)
   }
 
-  const isInstalled = await checkFFmpegInstalled()
-  if (isInstalled) {
-    console.log('--------------------installed')
-    // Update storage that is already installed
-    window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLED)
-    return
-  }
+  if (await checkFFmpegInstalled(window)) return
 
   switch (platform) {
     case 'darwin':
