@@ -34,8 +34,8 @@ module.exports = {
     target: ['AppImage', 'deb', 'pacman', 'freebsd', 'rpm'],
   },
 
-  win: {
-    icon: `${resources}/build/icons/icon.ico`,
-    target: ['nsis', 'portable', 'zip'],
-  },
+  // win: {
+  //   icon: `${resources}/build/icons/icon.ico`,
+  //   target: ['nsis', 'portable', 'zip'],
+  // },
 }
