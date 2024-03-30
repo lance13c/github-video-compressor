@@ -11,8 +11,6 @@ import { sendDebugMessage } from '~/src/main/dev_websockets'
 import { generateHostKey, validateTokenMiddleware } from '~/src/shared/utils/crypto.util'
 import { mimeTypeToExtension } from '~/src/shared/utils/file.util'
 
-ffmpeg.setFfmpegPath('/opt/homebrew/bin/ffmpeg')
-
 const isDevelopment = process.argv.includes('--development')
 sendDebugMessage('debug', `isDevelopment: ${isDevelopment}`)
 
@@ -27,6 +25,12 @@ declare global {
     }
   }
 }
+
+ffmpeg.setFfmpegPath('/opt/homebrew/bin/ffmpeg')
+
+// const setFfmpegPath = (path: string) => {
+//   ffmpeg.setFfmpegPath(path)
+// }
 
 async function deleteFilesInDirectory(dirPath: string): Promise<void> {
   try {

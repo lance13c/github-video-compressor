@@ -1,5 +1,6 @@
 import { exec } from 'child_process'
 import { BrowserWindow, dialog } from 'electron'
+// import { exec } from 'sudo-prompt'
 
 import Store from 'electron-store'
 import * as fs from 'fs'
@@ -26,6 +27,29 @@ function executeCommand(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const execution = exec(command)
+    // if (error) {
+    //   sendDebugMessage('error', `Error executing command: ${command}`)
+    //   reject()
+    // } else {
+    //   sendDebugMessage('info', 'Command executed successfully')
+    //   resolve()
+    // }
+
+    // if (stdout) {
+    //   sendDebugMessage('info', stdout)
+    //   logCallbacks?.onLog?.(stdout)
+    // }
+
+    // if (stderr) {
+    //   sendDebugMessage('error', stderr)
+    //   logCallbacks?.onError?.(stderr)
+    // }
+
+    // if (error) {
+    //   sendDebugMessage('error', error)
+    //   reject()
+    // }
+    // })
 
     execution.stdout?.on('data', data => {
       sendDebugMessage('info', data.toString())

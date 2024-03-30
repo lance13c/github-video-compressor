@@ -9,7 +9,7 @@ console.log('logDirectory', logDirectory)
 const logger = winston.createLogger({
   level: 'debug',
   format: winston.format.simple(),
-  defaultMeta: { service: 'user-service' },
+  // defaultMeta: { service: 'user-service' },
   transports: [new winston.transports.File({ filename: 'gvc_everything.log', dirname: logDirectory })],
 })
 
