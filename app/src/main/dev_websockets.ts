@@ -1,11 +1,16 @@
+import { app } from 'electron'
+import { name } from 'package.json'
 import winston from 'winston'
 import WebSocket from 'ws'
+
+const logDirectory = `${app.getPath('appData')}/${name}/logs` // Specify the logs directory within the user data directory
+console.log('logDirectory', logDirectory)
 
 const logger = winston.createLogger({
   level: 'debug',
   format: winston.format.simple(),
   defaultMeta: { service: 'user-service' },
-  transports: [new winston.transports.File({ filename: 'gvc_everything.log' })],
+  transports: [new winston.transports.File({ filename: 'gvc_everything.log', dirname: logDirectory })],
 })
 
 let debugWebSocket: WebSocket | null = null
