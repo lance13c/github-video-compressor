@@ -13,6 +13,7 @@ makeAppWithSingleInstanceLock(async () => {
   await checkSetup(app)
 
   const isDev = process.argv.includes('--development')
+  sendDebugMessage('info', `isDev: ${isDev}`)
 
   try {
     // const nativeMessagingHost = new NativeMessagingHost()

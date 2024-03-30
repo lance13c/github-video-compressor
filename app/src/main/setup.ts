@@ -28,19 +28,21 @@ function executeCommand(
     const execution = exec(command)
 
     execution.stdout?.on('data', data => {
-      console.log('Data:', data.toString())
+      sendDebugMessage('info', data.toString())
       logCallbacks?.onLog?.(`${data.toString()}\n`)
     })
 
     execution.stderr?.on('data', data => {
-      console.log('Error:', data.toString())
+      sendDebugMessage('error', `Error: ${data.toString()}`)
       logCallbacks?.onError?.(`Error: ${data.toString()}\n`)
     })
 
     execution.on('exit', code => {
       if (code === 0 || code === 1 || code === -1) {
+        sendDebugMessage('info', 'Command executed successfully')
         resolve()
       } else {
+        sendDebugMessage('error', `Error executing command: ${command}`)
         reject()
       }
     })
@@ -57,6 +59,7 @@ const promptUserForInstallation = (message: string, title: string): Promise<bool
       message: message,
     })
     .then(result => {
+      sendDebugMessage('info', `User selected: ${result.response === 0 ? 'Yes' : 'No'}`)
       return result.response === 0 // Returns true if 'Yes', false otherwise
     })
     .catch(err => {
@@ -68,12 +71,12 @@ const promptUserForInstallation = (message: string, title: string): Promise<bool
 const checkFFmpegInstalled = async (window: BrowserWindow): Promise<boolean> => {
   return executeCommand('ffmpeg -version')
     .then(res => {
-      console.log('Res', res)
+      sendDebugMessage('info', 'FFmpeg is already installed')
       window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLED)
       return true
     })
     .catch(err => {
-      console.log('Err', err)
+      sendDebugMessage('error', `Error checking ffmpeg installation: ${err}`)
       window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.UNINSTALLED)
       return false
     })
@@ -85,11 +88,11 @@ const installFFmpegMac = async (window: BrowserWindow) => {
       if (userAgreed) {
         await executeCommand('brew install ffmpeg', {
           onLog: mes => {
-            console.log('hit info', mes)
+            sendDebugMessage('info', mes)
             window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLING)
           },
           onError: mes => {
-            console.log('hit error', mes)
+            sendDebugMessage('error', mes)
             window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.FAILED)
           },
         }).catch(error => console.error(error))
@@ -102,7 +105,8 @@ const installFFmpegMac = async (window: BrowserWindow) => {
         return false
       }
     })
-    .catch(() => {
+    .catch((e: any) => {
+      sendDebugMessage('error', `${e?.message}`)
       return false
     })
 }
@@ -126,6 +130,7 @@ const installFFmpegWindows = async (window: BrowserWindow) => {
     'Install ffmpeg',
   ).then(userAgreed => {
     if (userAgreed) {
+      sendDebugMessage('info', 'User agreed to install ffmpeg')
       return executeCommand('choco install ffmpeg -y').catch(error => console.error(error))
     } else {
       sendDebugMessage('info', 'User declined to install ffmpeg')
@@ -164,12 +169,16 @@ function checkAndCreateChromeExtensionManifest(app: Electron.App) {
   const getChromeExtensionManifestPath = (platform: NodeJS.Platform) => {
     if (platform === 'win32') {
       const appDataPath = app.getPath('appData')
+      sendDebugMessage('info', `appDataPath: ${appDataPath}`)
       return path.join(appDataPath, 'Google/Chrome/User Data/NativeMessagingHosts')
     } else if (platform === 'darwin') {
+      sendDebugMessage('info', `os.homedir(): ${os.homedir()}`)
       return path.join(os.homedir(), `Library/Application\ Support/Google/Chrome/NativeMessagingHosts`)
     } else if (platform === 'linux') {
+      sendDebugMessage('info', `os.homedir(): ${os.homedir()}`)
       return path.join(os.homedir(), '.config/google-chrome/NativeMessagingHosts')
     } else {
+      sendDebugMessage('error', `Unsupported platform: ${platform}`)
       throw new Error(`Unsupported platform: ${platform}`)
     }
   }
@@ -178,7 +187,7 @@ function checkAndCreateChromeExtensionManifest(app: Electron.App) {
 
   // Check if manifestPath is defined for the current platform
   if (!manifestPath) {
-    console.error(`Platform ${platform} is not supported for Chrome extension manifest setup.`)
+    sendDebugMessage('error', `Platform ${platform} is not supported for Chrome extension manifest setup.`)
 
     throw new Error(`Platform ${platform} is not supported for Chrome extension manifest setup.`)
   }
@@ -186,7 +195,9 @@ function checkAndCreateChromeExtensionManifest(app: Electron.App) {
   const manifestFile = path.join(manifestPath, `${APP_NAME}.json`)
 
   if (!fs.existsSync(manifestFile)) {
+    sendDebugMessage('info', `Manifest file not found at ${manifestFile}`)
     if (!fs.existsSync(manifestPath)) {
+      sendDebugMessage('info', `Creating directory ${manifestPath}`)
       fs.mkdirSync(manifestPath, { recursive: true })
     }
     const sourceManifestPath = path.join(app.getAppPath(), '/src/resources/public', `${APP_NAME}.json`)
