@@ -1,8 +1,7 @@
 // NativeMessagingHost.ts
 import { readSync } from 'fs'
-import { sendDebugMessage } from 'main/dev_websockets'
-import process from 'process'
-import { Message, MessageSchema } from 'shared/utils/zod.util'
+import { sendDebugMessage } from '~/src/main/dev_websockets'
+import { Message, MessageSchema } from '~/src/shared/utils/zod.util'
 
 export type Listener = (parsedData: Message) => void
 
@@ -17,7 +16,7 @@ const objectToStdMessage = (message: Record<string, any>): Buffer => {
 
 // Create stdMessageToObject
 const bufferToObject = (buffer: Buffer): Record<string, any> | null => {
-  // sendDebugMessage('buffer', buffer)
+  sendDebugMessage('buffer', buffer)
   if (buffer.length < 4) {
     sendDebugMessage('bufferObj', 'Buffer is too short to contain message length.')
 
@@ -84,7 +83,7 @@ export class NativeMessagingHost {
     // process.stdin.on('data', (data: Buffer) => {
     //   // Handle incoming data from the Chrome extension
     //   // For example, process and send back video file
-    //   // sendDebugMessage('buffer received', data.toString())
+    //   sendDebugMessage('buffer received', data.toString())
     //   this.onDataReceived(data)
     // })
 
@@ -126,10 +125,9 @@ export class NativeMessagingHost {
       }
 
       sendDebugMessage('buffer obj rec:', parsedData)
-      // sendDebugMessage('onDataReceived:', content)
       // const dataAsString = JSON.stringify(parsedData)
       // this.sendMessage({ type: 'text', progress: 1, data: dataAsString })
-      // sendDebugMessage('onDataReceived:', JSON.stringify(bufferObject))
+      sendDebugMessage('onDataReceived:', JSON.stringify(bufferObject))
       this.listeners.forEach(listener => {
         listener(message.data)
       })

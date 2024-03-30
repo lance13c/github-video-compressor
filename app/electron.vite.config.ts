@@ -41,7 +41,7 @@ export default defineConfig({
           dir: resolve(devPath, 'main'),
         },
 
-        external: ['ws'],
+        // external: ['ws'],
       },
     },
   },

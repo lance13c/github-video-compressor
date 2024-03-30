@@ -37,8 +37,7 @@ async function deleteFilesInDirectory(dirPath: string): Promise<void> {
     })
     await Promise.all(unlinkPromises)
     sendDebugMessage('debug', `All files in ${dirPath} have been deleted.`)
-  } catch (error) {
-    // @ts-expect-error -- error message is valid
+  } catch (error: any) {
     sendDebugMessage('error', `Error deleting files in directory ${dirPath}: ${error?.message}`)
     throw error // Rethrow the error if you want to handle it further up the call stack
   }
@@ -50,8 +49,7 @@ const wipeDirectoryMiddleware = (dirPath: string) => {
     try {
       await deleteFilesInDirectory(dirPath)
       next()
-    } catch (error) {
-      // @ts-expect-error -- error message is valid
+    } catch (error: any) {
       sendDebugMessage('debug', `Error wiping directory ${dirPath}: ${error?.message}`)
       res.status(500).json({ message: 'Error processing request' })
     }
@@ -118,8 +116,7 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
       sendDebugMessage('debug - path', req.file.path)
       sendDebugMessage('debug - upload input path', fs.readdirSync(uploadsDir).join(', '))
 
-      // @ts-expect-error -- test token
-      sendDebugMessage('debug - token', req?.token)
+      // sendDebugMessage('debug - token', req?.token)
       sendDebugMessage('debug - file', req.file)
       // fs.move(req.file.path, path.join(__dirname, 'uploads', req.file.originalname), { overwrite: true })
       //   .then(() => res.status(200).json({ message: 'File uploaded successfully.' }))

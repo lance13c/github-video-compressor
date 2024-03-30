@@ -1,5 +1,6 @@
 import type { Message } from '@utils/zod.util';
 import { Buffer } from 'buffer';
+// import { sendDebugMessage } from '~/src/main/dev_websockets'
 
 // Number between 0 and 1, a percentage of the total file size
 export type ProgressCallback = (formattedProgress: string, progress: number) => void;

@@ -1,7 +1,14 @@
+import winston from 'winston'
 import WebSocket from 'ws'
 
-let debugWebSocket: WebSocket | null = null
+const logger = winston.createLogger({
+  level: 'debug',
+  format: winston.format.simple(),
+  defaultMeta: { service: 'user-service' },
+  transports: [new winston.transports.File({ filename: 'gvc_everything.log' })],
+})
 
+let debugWebSocket: WebSocket | null = null
 function generateRandomClientId() {
   const colors = ['red', 'blue', 'green', 'yellow', 'pink', 'black', 'white', 'purple', 'orange', 'brown']
   const animals = ['lion', 'tiger', 'bear', 'flamingo', 'eagle', 'dolphin', 'shark', 'wolf', 'fox', 'deer']
@@ -24,6 +31,12 @@ export const initWebSocketServer = () => {
 }
 
 export function sendDebugMessage(type: string, data: string | Record<string, any> | null) {
+  logger.log({
+    level: type,
+    message: typeof data === 'object' ? JSON.stringify(data) : JSON.stringify({ message: data }),
+  })
+
+  console.log('hit sendDebugMessage')
   if (!debugWebSocket) return
 
   const message = {

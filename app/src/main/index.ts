@@ -1,7 +1,7 @@
 import { app } from 'electron'
 
-// import { sendDebugMessage } from 'main/dev_websockets'
-import { initWebSocketServer, sendDebugMessage } from '~/src/main/dev_websockets'
+// import { initWebSocketServer, sendDebugMessage } from '~/src/main/dev_websockets'
+import { sendDebugMessage } from '~/src/main/dev_websockets'
 import { checkSetup } from '~/src/main/setup'
 import { startHttpFileServer } from '~/src/shared/utils/httpFileServer'
 import { makeAppWithSingleInstanceLock } from './factories'
@@ -17,7 +17,7 @@ makeAppWithSingleInstanceLock(async () => {
   try {
     // const nativeMessagingHost = new NativeMessagingHost()
     if (isDev) {
-      initWebSocketServer()
+      // initWebSocketServer()
     }
     const { server } = startHttpFileServer(app, port)
 
