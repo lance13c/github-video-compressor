@@ -1,6 +1,5 @@
 import { exec } from 'child_process'
 import { BrowserWindow, dialog } from 'electron'
-// import { exec } from 'sudo-prompt'
 
 import Store from 'electron-store'
 import * as fs from 'fs'
@@ -93,7 +92,7 @@ const promptUserForInstallation = (message: string, title: string): Promise<bool
 }
 
 const checkFFmpegInstalled = async (window: BrowserWindow): Promise<boolean> => {
-  return executeCommand('ffmpeg -version')
+  return executeCommand('/opt/homebrew/bin/ffmpeg -version')
     .then(res => {
       sendDebugMessage('info', 'FFmpeg is already installed')
       window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLED)
@@ -106,11 +105,25 @@ const checkFFmpegInstalled = async (window: BrowserWindow): Promise<boolean> => 
     })
 }
 
+const checkLS = async (window: BrowserWindow): Promise<boolean> => {
+  return executeCommand('ls -l')
+    .then(res => {
+      sendDebugMessage('info', `ls: ` + res)
+      // window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLED)
+      return true
+    })
+    .catch(err => {
+      sendDebugMessage('error', `Error checking LS installation: ${err}`)
+      // window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.UNINSTALLED)
+      return false
+    })
+}
+
 const installFFmpegMac = async (window: BrowserWindow) => {
   promptUserForInstallation('ffmpeg is required but not installed. Would you like to install it now?', 'Install ffmpeg')
     .then(async userAgreed => {
       if (userAgreed) {
-        await executeCommand('brew install ffmpeg', {
+        await executeCommand('/opt/homebrew/bin/brew install ffmpeg', {
           onLog: mes => {
             sendDebugMessage('info', mes)
             window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLING)
@@ -259,8 +272,10 @@ const showSplashScreen = () => {
 
 export const checkSetup = async (app: Electron.App) => {
   console.log('hit checkSetup')
+  checkLS
   const mainWindow = await makeAppSetup(MainWindow)
   mainWindow.webContents.on('did-finish-load', async () => {
+    await checkLS(mainWindow)
     await checkAndCreateChromeExtensionManifest(app)
     await initFFmpegInstallation(mainWindow)
     // The window needs some time to start up
