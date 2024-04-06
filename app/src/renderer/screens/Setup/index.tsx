@@ -1,6 +1,7 @@
 import { Accordion, AccordionItem, Button, Divider, Input, Link, Snippet } from '@nextui-org/react'
 import { useEffect, useState } from 'react'
 import { FaFile } from 'react-icons/fa'
+import { IoExtensionPuzzleOutline } from 'react-icons/io5'
 import { TbSquareRoundedNumber1, TbSquareRoundedNumber2, TbSquareRoundedNumber3 } from 'react-icons/tb'
 import { Container } from '~/src/renderer/components'
 import InstallStatusIcon from '~/src/renderer/components/InstallStatusButton'
@@ -8,7 +9,6 @@ import { useWindowStore } from '~/src/renderer/store'
 import manifestFile from '~/src/resources/public/com.dominic_cicilio.github_video_compressor.json'
 import { INSTALL_STATUS, InstallStatus } from '~/src/shared/constants'
 import { CHROME_EXTENSION_PUBLICATION_URL } from '~/src/shared/utils/constant'
-
 // The "App"MdF comes from the context bridge in preload/index.ts
 const { App } = window
 
@@ -19,6 +19,7 @@ export function SetupScreen() {
   const [logs, setLogs] = useState('')
   const [ffmpegInstallStatus, setFfmpegInstallStatus] = useState<InstallStatus>(INSTALL_STATUS.NONE)
   const [ffmpegInstallProgress, setFfmpegInstallProgress] = useState(0)
+  const [hasFFmpegPath, setHasFFmpegPath] = useState(false)
 
   useEffect(() => {
     const removeChannel = App.onFfmpegInstallStatus(status => {
@@ -29,6 +30,19 @@ export function SetupScreen() {
       removeChannel()
     }
   }, [])
+
+  const handleOnFFmpegPathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const path = e.target.value
+    setHasFFmpegPath(!!path)
+  }
+
+  const autoDetectFFmpegPath = () => {
+    // trigger which ffmpeg in terminal and return the path
+  }
+
+  const verifyFFmpegPath = () => {
+    // Send the path to the main process to verify
+  }
 
   // Fake load until install status = 'installed'
   // Slowing increase the progress bar, non linearly
@@ -92,12 +106,19 @@ export function SetupScreen() {
                 <li className="flex flex-col gap-2 min-h-8">
                   <div className="flex items-center gap-2">
                     <TbSquareRoundedNumber2 size={14} />
-                    Link ffmpeg
+                    Link path to ffmpeg binary
                   </div>
-                  <div className="flex gap-2 pl-4">
-                    <Input size="sm" variant="faded" placeholder="Link ffmpeg" />
-                    <Button isDisabled size="sm" color="primary" variant="solid">
-                      Check
+                  <div className="flex items-end gap-2 pl-5">
+                    <Input
+                      size="sm"
+                      variant="faded"
+                      placeholder="Link FFmpeg"
+                      label="FFmpeg Path"
+                      labelPlacement="outside"
+                      onChange={handleOnFFmpegPathChange}
+                    />
+                    <Button isDisabled={!hasFFmpegPath} size="sm" color="primary" variant="solid">
+                      Verify
                     </Button>
                   </div>
                 </li>
@@ -177,14 +198,19 @@ export function SetupScreen() {
               </div>
             </div>
           }>
-          <div className="relative flex gap-4 h-fit">
+          <div className="relative flex gap-4 h-fit items-end">
             <Divider orientation="vertical" className="ml-[7px] h-auto" />
 
-            <div className="text-sm text-gray-600">
-              <p>Install Chrome Extension</p>
-              <Link color="secondary" href={CHROME_EXTENSION_PUBLICATION_URL} size="sm" isExternal showAnchorIcon>
-                Get Chrome Extension
+            <div className="flex flex-col gap-2 text-sm text-gray-600">
+              <p>The last part is to install the chrome extension.</p>
+
+              <Snippet size="sm" color="primary" hideSymbol>
+                {CHROME_EXTENSION_PUBLICATION_URL}
+              </Snippet>
+              <Link color="primary" href={CHROME_EXTENSION_PUBLICATION_URL} size="sm" isExternal showAnchorIcon>
+                Install Chrome Extension
               </Link>
+              <IoExtensionPuzzleOutline className="b-0 text-primary-300/20" size={70} />
             </div>
           </div>
         </AccordionItem>
