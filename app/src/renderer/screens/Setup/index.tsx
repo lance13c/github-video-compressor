@@ -1,13 +1,15 @@
-import { Accordion, AccordionItem, Button, Divider, Input, Link } from '@nextui-org/react'
+import { Accordion, AccordionItem, Button, Divider, Input, Link, Snippet } from '@nextui-org/react'
 import { useEffect, useState } from 'react'
+import { FaFile } from 'react-icons/fa'
 import { TbSquareRoundedNumber1, TbSquareRoundedNumber2, TbSquareRoundedNumber3 } from 'react-icons/tb'
 import { Container } from '~/src/renderer/components'
 import InstallStatusIcon from '~/src/renderer/components/InstallStatusButton'
 import { useWindowStore } from '~/src/renderer/store'
+import manifestFile from '~/src/resources/public/com.dominic_cicilio.github_video_compressor.json'
 import { INSTALL_STATUS, InstallStatus } from '~/src/shared/constants'
 import { CHROME_EXTENSION_PUBLICATION_URL } from '~/src/shared/utils/constant'
 
-// The "App" comes from the context bridge in preload/index.ts
+// The "App"MdF comes from the context bridge in preload/index.ts
 const { App } = window
 
 export function SetupScreen() {
@@ -118,8 +120,47 @@ export function SetupScreen() {
           }>
           <div className="relative flex gap-4 h-fit">
             <Divider orientation="vertical" className="ml-[7px] h-auto" />
-            <div className="relative flex flex-col gap-2 pb-2 text-sm text-gray-600  !overflow-visible">
-              <p className="text-sm text-gray-600">Allows the chrome extension to talk with app.</p>
+            <div className="relative flex flex-col gap-2 pb-2 text-sm text-gray-600">
+              <p className="text-sm text-gray-600">This allows the chrome extension to talk with and boot the app.</p>
+              <Button size="sm" color="primary" variant="solid" className="max-w-[200px]">
+                Add Manifest File
+              </Button>
+              <Accordion
+                style={{
+                  paddingLeft: '0px',
+                  paddingRight: '0px',
+                }}
+                isCompact>
+                <AccordionItem
+                  key="manifest-file-info"
+                  aria-label="manifest-file"
+                  title={<span className="text-sm">What file is being added?</span>}>
+                  <div className="relative flex gap-4 h-fit">
+                    <Divider orientation="vertical" className="ml-[7px] h-auto" />
+                    <div className="relative flex flex-col gap-2 pb-2 text-sm ">
+                      <p className="text-sm">
+                        This adds the{' '}
+                        <Link
+                          size="sm"
+                          href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Native_messaging">
+                          native messaging
+                        </Link>{' '}
+                        manifest file to the appropriate directory. This allows the chrome extension to talk with and
+                        boot the app.
+                      </p>
+                      <h3 className="text-xs font-semibold flex gap-1 items-baseline">
+                        <FaFile size={8} />
+                        Manifest File
+                      </h3>
+                      <Snippet color="primary" hideSymbol>
+                        <div className="text-xs whitespace-pre-wrap text-black font-mono select-text">
+                          {JSON.stringify(manifestFile, null, 2)}
+                        </div>
+                      </Snippet>
+                    </div>
+                  </div>
+                </AccordionItem>
+              </Accordion>
             </div>
           </div>
         </AccordionItem>
