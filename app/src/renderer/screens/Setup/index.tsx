@@ -20,9 +20,12 @@ export function SetupScreen() {
   const [ffmpegInstallStatus, setFfmpegInstallStatus] = useState<InstallStatus>(INSTALL_STATUS.NONE)
   const [ffmpegInstallProgress, setFfmpegInstallProgress] = useState(0)
   const [hasFFmpegPath, setHasFFmpegPath] = useState(false)
+  const [ffmpegPath, setFFmpegPath] = useState('')
+  const [isVerifyingFFmpegPath, setIsVerifyingFFmpegPath] = useState(false)
 
   useEffect(() => {
     const removeChannel = App.onFfmpegInstallStatus(status => {
+      setIsVerifyingFFmpegPath(false)
       setFfmpegInstallStatus(status)
     })
 
@@ -33,7 +36,12 @@ export function SetupScreen() {
 
   const handleOnFFmpegPathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const path = e.target.value
-    setHasFFmpegPath(!!path)
+    setFFmpegPath(path)
+  }
+
+  const verifyAndSetFFmpegPath = (path: string) => {
+    setIsVerifyingFFmpegPath(true)
+    App.setFfmpegPath(path)
   }
 
   const autoDetectFFmpegPath = () => {
@@ -117,8 +125,14 @@ export function SetupScreen() {
                       labelPlacement="outside"
                       onChange={handleOnFFmpegPathChange}
                     />
-                    <Button isDisabled={!hasFFmpegPath} size="sm" color="primary" variant="solid">
-                      Verify
+                    <Button
+                      isDisabled={!ffmpegPath || isVerifyingFFmpegPath}
+                      isLoading={isVerifyingFFmpegPath}
+                      onClick={() => verifyAndSetFFmpegPath(ffmpegPath)}
+                      size="sm"
+                      color="primary"
+                      variant="solid">
+                      Verify and Save
                     </Button>
                   </div>
                 </li>

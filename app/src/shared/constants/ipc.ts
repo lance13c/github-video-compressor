@@ -10,6 +10,7 @@ export const IPC = {
       FFMPEG_INSTALL_STATUS: 'windows: ffmpeg-setup-install-status',
       FFMPEG_IS_INSTALLED: 'windows: ffmpeg-is-installed',
       FFMPEG_INSTALL_LOGS: 'windows: ffmpeg-install-logs',
+      FFMPEG_PATH: 'windows: ffmpeg-path',
     },
   },
 }
