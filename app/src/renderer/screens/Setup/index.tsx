@@ -1,4 +1,4 @@
-import { Accordion, AccordionItem, Divider, Input, Link } from '@nextui-org/react'
+import { Accordion, AccordionItem, Button, Divider, Input, Link } from '@nextui-org/react'
 import { useEffect, useState } from 'react'
 import { TbSquareRoundedNumber1, TbSquareRoundedNumber2, TbSquareRoundedNumber3 } from 'react-icons/tb'
 import { Container } from '~/src/renderer/components'
@@ -48,8 +48,14 @@ export function SetupScreen() {
 
   return (
     <Container>
-      <h1 className="flex items-center text-2xl text-gray-800 mb-2">App Setup</h1>
-      <Accordion showDivider={false} isCompact>
+      <h1 className="flex items-center text-2xl text-gray-800 mb-2">Github Video Compressor Setup</h1>
+      <Accordion
+        style={{
+          paddingLeft: '0px',
+          paddingRight: '0px',
+        }}
+        showDivider={false}
+        isCompact>
         <AccordionItem
           key="link"
           aria-label="Link ffmpeg"
@@ -58,7 +64,7 @@ export function SetupScreen() {
               <TbSquareRoundedNumber1 />
 
               <div className="pl-2 relative flex items-center gap-2">
-                <p className="font-medium text-sm">Installation</p>
+                <p className="font-medium text-sm">Install and Link ffmpeg</p>
                 <InstallStatusIcon status={ffmpegInstallStatus} />
               </div>
             </div>
@@ -66,21 +72,34 @@ export function SetupScreen() {
           <div className="relative flex gap-4 h-fit">
             <Divider orientation="vertical" className="ml-[7px] h-auto" />
             <div className="relative flex flex-col gap-2 pb-2 text-sm text-gray-600  !overflow-visible">
-              <ol>
-                <li className="list-item">
-                  Download ffmpeg if it is not already installed.{' '}
-                  <Link href="https://ffmpeg.org/download.html" size="sm" isExternal showAnchorIcon>
-                    Install ffmpeg here
-                  </Link>
-                </li>
-                <li>Link ffmpeg</li>
-                <li>Install Chrome Extension</li>
-              </ol>
-
               <p className="text-sm text-gray-600">
-                We use your installed version of ffmpeg to compress the videos. Please link your ffmpeg
+                This app uses your installed version of ffmpeg to compress the videos. Please link your ffmpeg below.
               </p>
-              <Input variant="faded" placeholder="Link ffmpeg" />
+              <ol>
+                <li className="flex items-center min-h-8">
+                  <div className="flex items-center gap-2">
+                    <TbSquareRoundedNumber1 size={14} />
+                    Download ffmpeg from
+                  </div>
+                  <div className="flex gap-1">
+                    <Link className="pl-1" href="https://ffmpeg.org/download.html" size="sm" isExternal showAnchorIcon>
+                      Install ffmpeg here
+                    </Link>
+                  </div>
+                </li>
+                <li className="flex flex-col gap-2 min-h-8">
+                  <div className="flex items-center gap-2">
+                    <TbSquareRoundedNumber2 size={14} />
+                    Link ffmpeg
+                  </div>
+                  <div className="flex gap-2 pl-4">
+                    <Input size="sm" variant="faded" placeholder="Link ffmpeg" />
+                    <Button isDisabled size="sm" color="primary" variant="solid">
+                      Check
+                    </Button>
+                  </div>
+                </li>
+              </ol>
             </div>
           </div>
         </AccordionItem>
@@ -91,8 +110,10 @@ export function SetupScreen() {
             <div className="flex items-center gap-1">
               <TbSquareRoundedNumber2 />
 
-              <p className="font-medium text-sm">Add Manifest File</p>
-              <InstallStatusIcon status={ffmpegInstallStatus} />
+              <div className="pl-2 relative flex items-center gap-2">
+                <p className="font-medium text-sm">Add Manifest File</p>
+                <InstallStatusIcon status={ffmpegInstallStatus} />
+              </div>
             </div>
           }>
           <div className="relative flex gap-4 h-fit">
@@ -109,8 +130,10 @@ export function SetupScreen() {
             <div className="flex items-center gap-1">
               <TbSquareRoundedNumber3 />
 
-              <p className="font-medium text-sm">Install Chrome Extension</p>
-              <InstallStatusIcon status={ffmpegInstallStatus} />
+              <div className="pl-2 relative flex items-center gap-2">
+                <p className="font-medium text-sm">Install Chrome Extension</p>
+                <InstallStatusIcon status={ffmpegInstallStatus} />
+              </div>
             </div>
           }>
           <div className="relative flex gap-4 h-fit">
