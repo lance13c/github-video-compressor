@@ -32,10 +32,8 @@ export function SetupScreen() {
       console.log('message', message)
       if (status === INSTALL_STATUS.INSTALLED) {
         toast('FFmpeg is successfully linked')
-      } else if (status === INSTALL_STATUS.FAILED) {
-        toast(`Invalid ffmpeg path. ${message}. Please try again.`, { type: 'error' })
-      } else {
-        toast('unknown')
+      } else if (status === INSTALL_STATUS.FAILED || status === INSTALL_STATUS.UNINSTALLED) {
+        toast(`Invalid ffmpeg path. Please try again. ${message}`, { type: 'error' })
       }
 
       console.log('status', status)
@@ -43,8 +41,14 @@ export function SetupScreen() {
       setFfmpegInstallStatus(status)
     })
 
+    // Init path from store
+    const removePathChannel = App.onFfmpegPath((_, path = '') => {
+      setFFmpegPath(path)
+    })
+
     return () => {
       removeChannel()
+      removePathChannel()
     }
   }, [])
 
@@ -118,6 +122,7 @@ export function SetupScreen() {
                       label="FFmpeg Path"
                       labelPlacement="outside"
                       onChange={handleOnFFmpegPathChange}
+                      value={ffmpegPath}
                     />
                     <Button
                       isDisabled={!ffmpegPath || isVerifyingFFmpegPath}
@@ -126,7 +131,7 @@ export function SetupScreen() {
                       size="sm"
                       color="primary"
                       variant="solid">
-                      Verify and Save
+                      Verify
                     </Button>
                   </div>
                 </li>
@@ -143,7 +148,7 @@ export function SetupScreen() {
 
               <div className="pl-2 relative flex items-center gap-2">
                 <p className="font-medium text-sm">Add Manifest File</p>
-                <InstallStatusIcon status={ffmpegInstallStatus} />
+                {/* <InstallStatusIcon status={ffmpegInstallStatus} /> */}
               </div>
             </div>
           }>
@@ -202,7 +207,7 @@ export function SetupScreen() {
 
               <div className="pl-2 relative flex items-center gap-2">
                 <p className="font-medium text-sm">Install Chrome Extension</p>
-                <InstallStatusIcon status={ffmpegInstallStatus} />
+                {/* <InstallStatusIcon status={ffmpegInstallStatus} /> */}
               </div>
             </div>
           }>

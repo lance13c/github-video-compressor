@@ -17,3 +17,11 @@ export function onFfmpegInstallStatus(callback: InstallStatusCallback) {
     console.log('ipcRenderer listener count', ipcRenderer.listenerCount(channel))
   }
 }
+
+export function onFfmpegPath(callback: (event: Electron.IpcRendererEvent, path: string) => void) {
+  ipcRenderer.on(IPC.WINDOWS.SETUP.FFMPEG_PATH, callback)
+
+  return () => {
+    ipcRenderer.removeListener(IPC.WINDOWS.SETUP.FFMPEG_PATH, callback)
+  }
+}

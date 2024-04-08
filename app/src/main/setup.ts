@@ -17,6 +17,7 @@ import { APP_NAME } from '~/src/shared/utils/constant'
 const store = new Store()
 
 const IPC_FFMPEG_STATUS = IPC.WINDOWS.SETUP.FFMPEG_INSTALL_STATUS
+const IPC_FFMPEG_PATH = IPC.WINDOWS.SETUP.FFMPEG_PATH
 
 function executeCommand(
   command: string,
@@ -27,29 +28,6 @@ function executeCommand(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const execution = exec(command)
-    // if (error) {
-    //   sendDebugMessage('error', `Error executing command: ${command}`)
-    //   reject()
-    // } else {
-    //   sendDebugMessage('info', 'Command executed successfully')
-    //   resolve()
-    // }
-
-    // if (stdout) {
-    //   sendDebugMessage('info', stdout)
-    //   logCallbacks?.onLog?.(stdout)
-    // }
-
-    // if (stderr) {
-    //   sendDebugMessage('error', stderr)
-    //   logCallbacks?.onError?.(stderr)
-    // }
-
-    // if (error) {
-    //   sendDebugMessage('error', error)
-    //   reject()
-    // }
-    // })
 
     execution.stdout?.on('data', data => {
       sendDebugMessage('info', data.toString())
@@ -96,12 +74,11 @@ const checkFFmpegInstalled = async (window: BrowserWindow, path: string): Promis
   return executeCommand(`${path} -version`)
     .then(res => {
       sendDebugMessage('info', 'FFmpeg is already installed')
-      window.webContents.send(IPC_FFMPEG_STATUS, [INSTALL_STATUS.INSTALLED])
+
       return true
     })
     .catch(err => {
       sendDebugMessage('error', `Error checking ffmpeg installation: ${err}`)
-      window.webContents.send(IPC_FFMPEG_STATUS, [INSTALL_STATUS.UNINSTALLED])
       return false
     })
 }
@@ -196,28 +173,45 @@ const pathSchema = z.string().endsWith('ffmpeg')
 
 export const checkSetup = async (app: Electron.App) => {
   console.log('hit checkSetup')
-  // checkLS
   const mainWindow = await makeAppSetup(MainWindow)
   mainWindow.webContents.on('did-finish-load', async () => {
     await checkLS(mainWindow)
     await checkAndCreateChromeExtensionManifest(app)
+
+    const path = store.get('ffmpegPath')
+    const parsedPath = pathSchema.safeParse(path)
+    if (parsedPath.success) {
+      const success = await checkFFmpegInstalled(mainWindow, parsedPath.data)
+      if (success) {
+        mainWindow.webContents.send(IPC_FFMPEG_STATUS, [INSTALL_STATUS.INSTALLED])
+        mainWindow.webContents.send(IPC_FFMPEG_PATH, [parsedPath.data])
+      }
+    }
+
     // await initFFmpegInstallation(mainWindow)
     // The window needs some time to start up
   })
 
-  mainWindow.webContents.on('ipc-message', (event, channel, args) => {
+  mainWindow.webContents.on('ipc-message', async (event, channel, args) => {
     console.log('hit ipc-message')
     if (channel === IPC.WINDOWS.SETUP.FFMPEG_PATH) {
-      const parsedArgs = pathSchema.safeParse(args)
-      if (!parsedArgs.success) {
+      const parsedPath = pathSchema.safeParse(args)
+      if (!parsedPath.success) {
         mainWindow.webContents.send(IPC.WINDOWS.SETUP.FFMPEG_INSTALL_STATUS, [
           INSTALL_STATUS.FAILED,
-          parsedArgs.error.errors.map(e => e.message).join(','),
+          parsedPath.error.errors.map(e => e.message).join(','),
         ])
 
         return
       }
-      checkFFmpegInstalled(mainWindow, parsedArgs.data)
+
+      const success = await checkFFmpegInstalled(mainWindow, parsedPath.data)
+      if (success) {
+        mainWindow.webContents.send(IPC_FFMPEG_STATUS, [INSTALL_STATUS.INSTALLED])
+        store.set('ffmpegPath', parsedPath.data)
+      } else {
+        mainWindow.webContents.send(IPC_FFMPEG_STATUS, [INSTALL_STATUS.FAILED])
+      }
     }
   })
 }
