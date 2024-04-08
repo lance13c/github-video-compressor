@@ -7,7 +7,7 @@ import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 
 import { Container } from '~/src/renderer/components'
-import InstallStatusIcon from '~/src/renderer/components/InstallStatusButton'
+import StatusIcon from '~/src/renderer/components/StatusIcon'
 import { useWindowStore } from '~/src/renderer/store'
 import manifestFile from '~/src/resources/public/com.dominic_cicilio.github_video_compressor.json'
 import { INSTALL_STATUS, InstallStatus } from '~/src/shared/constants'
@@ -19,12 +19,10 @@ export function SetupScreen() {
   const store = useWindowStore().setup
   const [setupProgress, setSetupProgress] = useState(0)
   const [isSetupComplete, setIsSetupComplete] = useState(false)
-  const [logs, setLogs] = useState('')
   const [ffmpegInstallStatus, setFfmpegInstallStatus] = useState<InstallStatus>(INSTALL_STATUS.NONE)
-  const [ffmpegInstallProgress, setFfmpegInstallProgress] = useState(0)
-  const [hasFFmpegPath, setHasFFmpegPath] = useState(false)
   const [ffmpegPath, setFFmpegPath] = useState('')
   const [isVerifyingFFmpegPath, setIsVerifyingFFmpegPath] = useState(false)
+  const [manifestInstallStatus, setManifestInstallStatus] = useState<InstallStatus>(INSTALL_STATUS.NONE)
 
   useEffect(() => {
     const removeChannel = App.onFfmpegInstallStatus((_, [status, message = '']) => {
@@ -46,9 +44,21 @@ export function SetupScreen() {
       setFFmpegPath(path)
     })
 
+    // Init manifest status
+    const removeManifestChannel = App.onManifestInstallStatus((_, [status, message = '']) => {
+      if (status === INSTALL_STATUS.INSTALLED) {
+        toast('Manifest file is successfully added')
+      } else if (status === INSTALL_STATUS.FAILED) {
+        toast(`Failed to add manifest file. ${message}`, { type: 'error' })
+      }
+
+      setManifestInstallStatus(status)
+    })
+
     return () => {
       removeChannel()
       removePathChannel()
+      removeManifestChannel()
     }
   }, [])
 
@@ -62,6 +72,10 @@ export function SetupScreen() {
     setIsVerifyingFFmpegPath(true)
     App.setFfmpegPath(ffmpegPath)
   }, [ffmpegPath])
+
+  // const checkManifestFile = () => {
+
+  // }
 
   const autoDetectFFmpegPath = () => {
     // trigger which ffmpeg in terminal and return the path
@@ -87,7 +101,7 @@ export function SetupScreen() {
 
               <div className="pl-2 relative flex items-center gap-2">
                 <p className="font-medium text-sm">Install and Link ffmpeg</p>
-                <InstallStatusIcon status={ffmpegInstallStatus} />
+                <StatusIcon status={ffmpegInstallStatus} />
               </div>
             </div>
           }>
@@ -148,7 +162,7 @@ export function SetupScreen() {
 
               <div className="pl-2 relative flex items-center gap-2">
                 <p className="font-medium text-sm">Add Manifest File</p>
-                {/* <InstallStatusIcon status={ffmpegInstallStatus} /> */}
+                <StatusIcon status={manifestInstallStatus} />
               </div>
             </div>
           }>

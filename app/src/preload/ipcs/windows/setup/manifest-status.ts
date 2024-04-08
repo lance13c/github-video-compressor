@@ -1,10 +1,10 @@
 import { ipcRenderer } from 'electron'
 import { IPC, InstallStatus } from '~/src/shared/constants'
 
-const channel = IPC.WINDOWS.SETUP.FFMPEG_INSTALL_STATUS
+const channel = IPC.WINDOWS.SETUP.MANIFEST_STATUS
 type InstallStatusCallback = (event: Electron.IpcRendererEvent, args: [InstallStatus, string | undefined]) => void
 
-export function onFfmpegInstallStatus(callback: InstallStatusCallback) {
+export function onManifestInstallStatus(callback: InstallStatusCallback) {
   console.log('adding listener')
 
   ipcRenderer.on(channel, callback)

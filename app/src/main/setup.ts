@@ -1,5 +1,5 @@
 import { exec } from 'child_process'
-import { BrowserWindow, dialog } from 'electron'
+import { BrowserWindow } from 'electron'
 
 import Store from 'electron-store'
 import * as fs from 'fs'
@@ -51,25 +51,6 @@ function executeCommand(
   })
 }
 
-const promptUserForInstallation = (message: string, title: string): Promise<boolean> => {
-  return dialog
-    .showMessageBox({
-      type: 'question',
-      buttons: ['Yes', "No, I'll do it myself"],
-      defaultId: 0,
-      title: title,
-      message: message,
-    })
-    .then(result => {
-      sendDebugMessage('info', `User selected: ${result.response === 0 ? 'Yes' : 'No'}`)
-      return result.response === 0 // Returns true if 'Yes', false otherwise
-    })
-    .catch(err => {
-      sendDebugMessage('error', `Error showing dialog: ${err}`)
-      return false // Assume 'No' on error
-    })
-}
-
 const checkFFmpegInstalled = async (window: BrowserWindow, path: string): Promise<boolean> => {
   return executeCommand(`${path} -version`)
     .then(res => {
@@ -87,39 +68,51 @@ const checkLS = async (window: BrowserWindow): Promise<boolean> => {
   return executeCommand('ls -l')
     .then(res => {
       sendDebugMessage('info', `ls: ` + res)
-      // window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLED)
       return true
     })
     .catch(err => {
       sendDebugMessage('error', `Error checking LS installation: ${err}`)
-      // window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.UNINSTALLED)
       return false
     })
 }
 
 const ALLOWED_PLATFORMS = ['darwin', 'win32', 'linux']
-
-function checkAndCreateChromeExtensionManifest(app: Electron.App) {
-  const platform = os.platform()
-
-  const getChromeExtensionManifestPath = (platform: NodeJS.Platform) => {
-    if (platform === 'win32') {
-      const appDataPath = app.getPath('appData')
-      sendDebugMessage('info', `appDataPath: ${appDataPath}`)
-      return path.join(appDataPath, 'Google/Chrome/User Data/NativeMessagingHosts')
-    } else if (platform === 'darwin') {
-      sendDebugMessage('info', `os.homedir(): ${os.homedir()}`)
-      return path.join(os.homedir(), `Library/Application\ Support/Google/Chrome/NativeMessagingHosts`)
-    } else if (platform === 'linux') {
-      sendDebugMessage('info', `os.homedir(): ${os.homedir()}`)
-      return path.join(os.homedir(), '.config/google-chrome/NativeMessagingHosts')
-    } else {
-      sendDebugMessage('error', `Unsupported platform: ${platform}`)
-      throw new Error(`Unsupported platform: ${platform}`)
-    }
+const getChromeExtensionManifestPath = (app: Electron.App, platform: NodeJS.Platform) => {
+  if (!ALLOWED_PLATFORMS.includes(platform)) {
+    throw new Error(`Unsupported platform: ${platform}`)
   }
 
-  const manifestPath = getChromeExtensionManifestPath(platform)
+  if (platform === 'win32') {
+    const appDataPath = app.getPath('appData')
+    sendDebugMessage('info', `appDataPath: ${appDataPath}`)
+    return path.join(appDataPath, 'Google/Chrome/User Data/NativeMessagingHosts')
+  } else if (platform === 'darwin') {
+    sendDebugMessage('info', `os.homedir(): ${os.homedir()}`)
+    return path.join(os.homedir(), `Library/Application\ Support/Google/Chrome/NativeMessagingHosts`)
+  } else if (platform === 'linux') {
+    sendDebugMessage('info', `os.homedir(): ${os.homedir()}`)
+    return path.join(os.homedir(), '.config/google-chrome/NativeMessagingHosts')
+  }
+}
+
+function checkChromeExtensionManifest(app: Electron.App) {
+  const platform = os.platform()
+  const manifestPath = getChromeExtensionManifestPath(app, platform)
+
+  // Check if manifestPath is defined for the current platform
+  if (!manifestPath) {
+    sendDebugMessage('error', `Platform ${platform} is not supported for Chrome extension manifest setup.`)
+
+    throw new Error(`Platform ${platform} is not supported for Chrome extension manifest setup.`)
+  }
+  const manifestFile = path.join(manifestPath, `${APP_NAME}.json`)
+
+  return !!fs.existsSync(manifestFile)
+}
+
+const createManifestFile = (app: Electron.App) => {
+  const platform = os.platform()
+  const manifestPath = getChromeExtensionManifestPath(app, platform)
 
   // Check if manifestPath is defined for the current platform
   if (!manifestPath) {
@@ -130,22 +123,22 @@ function checkAndCreateChromeExtensionManifest(app: Electron.App) {
 
   const manifestFile = path.join(manifestPath, `${APP_NAME}.json`)
 
-  if (!fs.existsSync(manifestFile)) {
-    sendDebugMessage('info', `Manifest file not found at ${manifestFile}`)
-    if (!fs.existsSync(manifestPath)) {
-      sendDebugMessage('info', `Creating directory ${manifestPath}`)
-      fs.mkdirSync(manifestPath, { recursive: true })
-    }
-    const sourceManifestPath = path.join(app.getAppPath(), '/src/resources/public', `${APP_NAME}.json`)
-    fs.copyFileSync(sourceManifestPath, manifestPath)
+  sendDebugMessage('info', `Manifest file not found at ${manifestFile}`)
+  if (!fs.existsSync(manifestPath)) {
+    sendDebugMessage('info', `Creating directory ${manifestPath}`)
+    fs.mkdirSync(manifestPath, { recursive: true })
+  }
+  const sourceManifestPath = path.join(app.getAppPath(), '/src/resources/public', `${APP_NAME}.json`)
+  fs.copyFileSync(sourceManifestPath, manifestPath)
+
+  const success = checkChromeExtensionManifest(app)
+  if (success) {
     return true
   } else {
     return false
   }
 }
 
-// /Users/dominic.cicilio/Documents/repos/github-video-compressor/app/src/resources/public/com.dominic_cicilio.github_video_compressor.json
-// /Users/dominic.cicilio/Documents/repos/github-video-compressor/app/src/resources/public/com.dominic_cicilio.github_video_compressor.json
 const isFirstRun = (): boolean => {
   // Check if 'firstRun' key exists
   if (store.get('firstRun') === undefined) {
@@ -176,18 +169,24 @@ export const checkSetup = async (app: Electron.App) => {
   const mainWindow = await makeAppSetup(MainWindow)
   mainWindow.webContents.on('did-finish-load', async () => {
     await checkLS(mainWindow)
-    await checkAndCreateChromeExtensionManifest(app)
 
+    // Path Init
     const path = store.get('ffmpegPath')
     const parsedPath = pathSchema.safeParse(path)
     if (parsedPath.success) {
       const success = await checkFFmpegInstalled(mainWindow, parsedPath.data)
       if (success) {
-        mainWindow.webContents.send(IPC_FFMPEG_STATUS, [INSTALL_STATUS.INSTALLED])
+        mainWindow.webContents.send(IPC_FFMPEG_STATUS, [INSTALL_STATUS.ALREADY_INSTALLED])
         mainWindow.webContents.send(IPC_FFMPEG_PATH, [parsedPath.data])
       }
     }
 
+    // Manifest Init
+    if (await checkChromeExtensionManifest(app)) {
+      mainWindow.webContents.send(IPC.WINDOWS.SETUP.MANIFEST_STATUS, [INSTALL_STATUS.ALREADY_INSTALLED])
+    } else {
+      mainWindow.webContents.send(IPC.WINDOWS.SETUP.MANIFEST_STATUS, [INSTALL_STATUS.UNINSTALLED])
+    }
     // await initFFmpegInstallation(mainWindow)
     // The window needs some time to start up
   })
@@ -211,6 +210,13 @@ export const checkSetup = async (app: Electron.App) => {
         store.set('ffmpegPath', parsedPath.data)
       } else {
         mainWindow.webContents.send(IPC_FFMPEG_STATUS, [INSTALL_STATUS.FAILED])
+      }
+    } else if (channel === IPC.WINDOWS.SETUP.ADD_MANIFEST) {
+      const success = createManifestFile(app)
+      if (success) {
+        mainWindow.webContents.send(IPC.WINDOWS.SETUP.MANIFEST_STATUS, [INSTALL_STATUS.INSTALLED])
+      } else {
+        mainWindow.webContents.send(IPC.WINDOWS.SETUP.MANIFEST_STATUS, [INSTALL_STATUS.FAILED])
       }
     }
   })
