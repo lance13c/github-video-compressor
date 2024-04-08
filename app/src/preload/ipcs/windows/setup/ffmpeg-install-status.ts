@@ -2,12 +2,18 @@ import { ipcRenderer } from 'electron'
 import { IPC, InstallStatus } from '~/src/shared/constants'
 
 const channel = IPC.WINDOWS.SETUP.FFMPEG_INSTALL_STATUS
-export function onFfmpegInstallStatus(fn: (status: InstallStatus) => void) {
-  ipcRenderer.on(channel, (_, status: InstallStatus) => {
-    fn(status)
-  })
+type InstallStatusCallback = (event: Electron.IpcRendererEvent, args: [InstallStatus, string | undefined]) => void
+
+export function onFfmpegInstallStatus(callback: InstallStatusCallback) {
+  console.log('adding listener')
+
+  ipcRenderer.on(channel, callback)
+  console.log('init ipcRenderer listener count', ipcRenderer.listenerCount(channel))
 
   return () => {
-    ipcRenderer.removeListener(channel, fn)
+    console.log('Removing listener')
+    ipcRenderer.removeListener(channel, callback)
+
+    console.log('ipcRenderer listener count', ipcRenderer.listenerCount(channel))
   }
 }

@@ -1,15 +1,18 @@
 import { Accordion, AccordionItem, Button, Divider, Input, Link, Snippet } from '@nextui-org/react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { FaFile } from 'react-icons/fa'
 import { IoExtensionPuzzleOutline } from 'react-icons/io5'
 import { TbSquareRoundedNumber1, TbSquareRoundedNumber2, TbSquareRoundedNumber3 } from 'react-icons/tb'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+
 import { Container } from '~/src/renderer/components'
 import InstallStatusIcon from '~/src/renderer/components/InstallStatusButton'
 import { useWindowStore } from '~/src/renderer/store'
 import manifestFile from '~/src/resources/public/com.dominic_cicilio.github_video_compressor.json'
 import { INSTALL_STATUS, InstallStatus } from '~/src/shared/constants'
 import { CHROME_EXTENSION_PUBLICATION_URL } from '~/src/shared/utils/constant'
-// The "App"MdF comes from the context bridge in preload/index.ts
+
 const { App } = window
 
 export function SetupScreen() {
@@ -24,7 +27,18 @@ export function SetupScreen() {
   const [isVerifyingFFmpegPath, setIsVerifyingFFmpegPath] = useState(false)
 
   useEffect(() => {
-    const removeChannel = App.onFfmpegInstallStatus(status => {
+    const removeChannel = App.onFfmpegInstallStatus((_, [status, message = '']) => {
+      console.log('status', status)
+      console.log('message', message)
+      if (status === INSTALL_STATUS.INSTALLED) {
+        toast('FFmpeg is successfully linked')
+      } else if (status === INSTALL_STATUS.FAILED) {
+        toast(`Invalid ffmpeg path. ${message}. Please try again.`, { type: 'error' })
+      } else {
+        toast('unknown')
+      }
+
+      console.log('status', status)
       setIsVerifyingFFmpegPath(false)
       setFfmpegInstallStatus(status)
     })
@@ -39,39 +53,19 @@ export function SetupScreen() {
     setFFmpegPath(path)
   }
 
-  const verifyAndSetFFmpegPath = (path: string) => {
+  const verifyAndSetFFmpegPath = useCallback(() => {
+    console.log('verifyAndSetFFmpegPath')
     setIsVerifyingFFmpegPath(true)
-    App.setFfmpegPath(path)
-  }
+    App.setFfmpegPath(ffmpegPath)
+  }, [ffmpegPath])
 
   const autoDetectFFmpegPath = () => {
     // trigger which ffmpeg in terminal and return the path
   }
 
-  const verifyFFmpegPath = () => {
-    // Send the path to the main process to verify
-  }
-
-  // Fake load until install status = 'installed'
-  // Slowing increase the progress bar, non linearly
-  useEffect(() => {
-    if (ffmpegInstallStatus === INSTALL_STATUS.INSTALLING) {
-      const interval = setInterval(() => {
-        setFfmpegInstallProgress(progress => {
-          if (progress >= 100) {
-            clearInterval(interval)
-            return 100
-          }
-
-          return progress + Math.random() * 10
-        })
-      }, 1000)
-      return () => clearInterval(interval)
-    }
-  }, [ffmpegInstallStatus])
-
   return (
     <Container>
+      <ToastContainer stacked position="bottom-right" limit={3} newestOnTop />
       <h1 className="flex items-center text-2xl text-gray-800 mb-2">Github Video Compressor Setup</h1>
       <Accordion
         style={{
@@ -128,7 +122,7 @@ export function SetupScreen() {
                     <Button
                       isDisabled={!ffmpegPath || isVerifyingFFmpegPath}
                       isLoading={isVerifyingFFmpegPath}
-                      onClick={() => verifyAndSetFFmpegPath(ffmpegPath)}
+                      onClick={verifyAndSetFFmpegPath}
                       size="sm"
                       color="primary"
                       variant="solid">

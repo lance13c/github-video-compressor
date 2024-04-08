@@ -5,6 +5,7 @@ import Store from 'electron-store'
 import * as fs from 'fs'
 import * as os from 'os'
 import path from 'path'
+import z from 'zod'
 import { sendDebugMessage } from '~/src/main/dev_websockets'
 
 import { makeAppSetup } from '~/src/main/factories'
@@ -91,16 +92,16 @@ const promptUserForInstallation = (message: string, title: string): Promise<bool
     })
 }
 
-const checkFFmpegInstalled = async (window: BrowserWindow): Promise<boolean> => {
-  return executeCommand('/opt/homebrew/bin/ffmpeg -version')
+const checkFFmpegInstalled = async (window: BrowserWindow, path: string): Promise<boolean> => {
+  return executeCommand(`${path} -version`)
     .then(res => {
       sendDebugMessage('info', 'FFmpeg is already installed')
-      window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLED)
+      window.webContents.send(IPC_FFMPEG_STATUS, [INSTALL_STATUS.INSTALLED])
       return true
     })
     .catch(err => {
       sendDebugMessage('error', `Error checking ffmpeg installation: ${err}`)
-      window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.UNINSTALLED)
+      window.webContents.send(IPC_FFMPEG_STATUS, [INSTALL_STATUS.UNINSTALLED])
       return false
     })
 }
@@ -119,86 +120,7 @@ const checkLS = async (window: BrowserWindow): Promise<boolean> => {
     })
 }
 
-const installFFmpegMac = async (window: BrowserWindow) => {
-  promptUserForInstallation('ffmpeg is required but not installed. Would you like to install it now?', 'Install ffmpeg')
-    .then(async userAgreed => {
-      if (userAgreed) {
-        await executeCommand('/opt/homebrew/bin/brew install ffmpeg', {
-          onLog: mes => {
-            sendDebugMessage('info', mes)
-            window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.INSTALLING)
-          },
-          onError: mes => {
-            sendDebugMessage('error', mes)
-            window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.FAILED)
-          },
-        }).catch(error => console.error(error))
-        console.log('hit after execution')
-        await checkFFmpegInstalled(window)
-
-        return true
-      } else {
-        sendDebugMessage('info', 'User declined to install ffmpeg')
-        return false
-      }
-    })
-    .catch((e: any) => {
-      sendDebugMessage('error', `${e?.message}`)
-      return false
-    })
-}
-
-const installFFmpegLinux = async (window: BrowserWindow) => {
-  promptUserForInstallation(
-    'ffmpeg is required but not installed. Would you like to install it now?',
-    'Install ffmpeg',
-  ).then(userAgreed => {
-    if (userAgreed) {
-      executeCommand('sudo apt update && sudo apt install -y ffmpeg').catch(error => console.error(error))
-    } else {
-      sendDebugMessage('info', 'User declined to install ffmpeg')
-    }
-  })
-}
-
-const installFFmpegWindows = async (window: BrowserWindow) => {
-  return promptUserForInstallation(
-    'ffmpeg is required but not installed. Would you like to install it now using Chocolatey?',
-    'Install ffmpeg',
-  ).then(userAgreed => {
-    if (userAgreed) {
-      sendDebugMessage('info', 'User agreed to install ffmpeg')
-      return executeCommand('choco install ffmpeg -y').catch(error => console.error(error))
-    } else {
-      sendDebugMessage('info', 'User declined to install ffmpeg')
-    }
-  })
-}
-
 const ALLOWED_PLATFORMS = ['darwin', 'win32', 'linux']
-
-const initFFmpegInstallation = async (window: BrowserWindow) => {
-  const platform = os.platform()
-
-  if (!ALLOWED_PLATFORMS.includes(platform)) {
-    window.webContents.send(IPC_FFMPEG_STATUS, INSTALL_STATUS.FAILED)
-
-    throw new Error(`Unsupported platform: ${platform}`)
-  }
-
-  if (await checkFFmpegInstalled(window)) return
-
-  switch (platform) {
-    case 'darwin':
-      return await installFFmpegMac(window)
-    case 'win32':
-      return await installFFmpegWindows(window)
-    case 'linux':
-      return await installFFmpegLinux(window)
-    default:
-      throw new Error(`Unsupported platform: ${platform}`)
-  }
-}
 
 function checkAndCreateChromeExtensionManifest(app: Electron.App) {
   const platform = os.platform()
@@ -270,14 +192,32 @@ const showSplashScreen = () => {
   splashWindow.on('closed', () => (splashWindow = null))
 }
 
+const pathSchema = z.string().endsWith('ffmpeg')
+
 export const checkSetup = async (app: Electron.App) => {
   console.log('hit checkSetup')
-  checkLS
+  // checkLS
   const mainWindow = await makeAppSetup(MainWindow)
   mainWindow.webContents.on('did-finish-load', async () => {
     await checkLS(mainWindow)
     await checkAndCreateChromeExtensionManifest(app)
-    await initFFmpegInstallation(mainWindow)
+    // await initFFmpegInstallation(mainWindow)
     // The window needs some time to start up
+  })
+
+  mainWindow.webContents.on('ipc-message', (event, channel, args) => {
+    console.log('hit ipc-message')
+    if (channel === IPC.WINDOWS.SETUP.FFMPEG_PATH) {
+      const parsedArgs = pathSchema.safeParse(args)
+      if (!parsedArgs.success) {
+        mainWindow.webContents.send(IPC.WINDOWS.SETUP.FFMPEG_INSTALL_STATUS, [
+          INSTALL_STATUS.FAILED,
+          parsedArgs.error.errors.map(e => e.message).join(','),
+        ])
+
+        return
+      }
+      checkFFmpegInstalled(mainWindow, parsedArgs.data)
+    }
   })
 }
