@@ -1,5 +1,6 @@
 import bodyParser from 'body-parser'
 import cors from 'cors'
+import Store from 'electron-store'
 import express, { Express, NextFunction, Request, Response } from 'express'
 import ffmpeg from 'fluent-ffmpeg'
 import fs from 'fs'
@@ -10,6 +11,8 @@ import { fileURLToPath } from 'url'
 import { sendDebugMessage } from '~/src/main/dev_websockets'
 import { generateHostKey, validateTokenMiddleware } from '~/src/shared/utils/crypto.util'
 import { mimeTypeToExtension } from '~/src/shared/utils/file.util'
+
+const store = new Store()
 
 const isDevelopment = process.argv.includes('--development')
 sendDebugMessage('debug', `isDevelopment: ${isDevelopment}`)
@@ -25,8 +28,6 @@ declare global {
     }
   }
 }
-
-ffmpeg.setFfmpegPath('/opt/homebrew/bin/ffmpeg')
 
 // const setFfmpegPath = (path: string) => {
 //   ffmpeg.setFfmpegPath(path)
@@ -61,6 +62,14 @@ const wipeDirectoryMiddleware = (dirPath: string) => {
 }
 
 export const startHttpFileServer = (electronApp: Electron.App, port: number = 7779) => {
+  const ffmpegFilePath = store.get('ffmpegPath') as string | undefined
+  if (!ffmpegFilePath) {
+    sendDebugMessage('error', 'No FFmpeg path found in store')
+    throw new Error('No FFmpeg path found in store')
+  }
+
+  ffmpeg.setFfmpegPath(ffmpegFilePath)
+
   const tempPath = electronApp.getPath('temp')
   // @ts-expect-error - import.meta.url is correct
   const __dirname = path.dirname(fileURLToPath(import.meta.url))
