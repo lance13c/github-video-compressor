@@ -9,6 +9,8 @@ export const IPC = {
       WHEN_WINDOW_CLOSE: 'windows: when-setup-window-close',
       FFMPEG_INSTALL_STATUS: 'windows: ffmpeg-setup-install-status',
       MANIFEST_STATUS: 'windows: manifest-status',
+      EXTENSION_STATUS: 'windows: extension-status',
+      VERIFY_EXTENSION: 'windows: verify-extension',
       ADD_MANIFEST: 'windows: add-manifest',
       FFMPEG_IS_INSTALLED: 'windows: ffmpeg-is-installed',
       FFMPEG_INSTALL_LOGS: 'windows: ffmpeg-install-logs',

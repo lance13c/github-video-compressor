@@ -11,13 +11,78 @@ import { sendDebugMessage } from '~/src/main/dev_websockets'
 import { makeAppSetup } from '~/src/main/factories'
 import { MainWindow } from '~/src/main/windows'
 import { INSTALL_STATUS, IPC } from '~/src/shared/constants/ipc'
-import { APP_NAME } from '~/src/shared/utils/constant'
+import { APP_NAME, CHROME_EXTENSION_ID } from '~/src/shared/utils/constant'
 
 // Initialize electron-store
 const store = new Store()
 
 const IPC_FFMPEG_STATUS = IPC.WINDOWS.SETUP.FFMPEG_INSTALL_STATUS
 const IPC_FFMPEG_PATH = IPC.WINDOWS.SETUP.FFMPEG_PATH
+
+function isExtensionInstalled(extensionId: string): boolean {
+  const profileDirs = getProfileDirectories()
+
+  for (const profileDir of profileDirs) {
+    const extensionPath = getExtensionPath(extensionId, profileDir)
+    if (fs.existsSync(extensionPath)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function getProfileDirectories(): string[] {
+  const profileDirs: string[] = []
+  let chromeUserDataDir = ''
+  let homeDir = ''
+  let localAppData = ''
+
+  switch (process.platform) {
+    case 'win32':
+      localAppData = process.env.LOCALAPPDATA!
+      chromeUserDataDir = path.join(localAppData, 'Google', 'Chrome', 'User Data')
+      profileDirs.push(path.join(chromeUserDataDir, 'Default'))
+      break
+    case 'darwin':
+      homeDir = process.env.HOME!
+      chromeUserDataDir = path.join(homeDir, 'Library', 'Application Support', 'Google', 'Chrome')
+      profileDirs.push(path.join(chromeUserDataDir, 'Default'))
+      break
+    case 'linux':
+      homeDir = process.env.HOME!
+      chromeUserDataDir = path.join(homeDir, '.config', 'google-chrome')
+      profileDirs.push(path.join(chromeUserDataDir, 'Default'))
+      break
+    default:
+      console.warn('Unsupported platform:', process.platform)
+      return profileDirs
+  }
+
+  // Check for additional profiles
+  const profileDirPattern = /^Profile \d+$/
+  const userDataDir = path.dirname(profileDirs[0])
+  const additionalProfileDirs = fs.readdirSync(userDataDir).filter(dir => profileDirPattern.test(dir))
+  profileDirs.push(...additionalProfileDirs.map(dir => path.join(userDataDir, dir)))
+
+  return profileDirs
+}
+
+function getExtensionPath(extensionId: string, profileDir: string): string {
+  const extensionDir = path.join(profileDir, 'Extensions', extensionId)
+
+  // Check the default version directory
+  try {
+    const versionDirs = fs.readdirSync(extensionDir)
+    if (versionDirs.length > 0) {
+      return path.join(extensionDir, versionDirs[0])
+    }
+  } catch (e) {
+    sendDebugMessage('error', `Error getting extension path: ${e}`)
+  }
+
+  return ''
+}
 
 function executeCommand(
   command: string,
@@ -85,7 +150,7 @@ const getChromeExtensionManifestPath = (app: Electron.App, platform: NodeJS.Plat
   if (platform === 'win32') {
     const appDataPath = app.getPath('appData')
     sendDebugMessage('info', `appDataPath: ${appDataPath}`)
-    return path.join(appDataPath, 'Google/Chrome/User Data/NativeMessagingHosts')
+    return path.join(appDataPath, `Google/Chrome/User\ Data/NativeMessagingHosts`)
   } else if (platform === 'darwin') {
     sendDebugMessage('info', `os.homedir(): ${os.homedir()}`)
     return path.join(os.homedir(), `Library/Application\ Support/Google/Chrome/NativeMessagingHosts`)
@@ -139,29 +204,6 @@ const createManifestFile = (app: Electron.App) => {
   }
 }
 
-const isFirstRun = (): boolean => {
-  // Check if 'firstRun' key exists
-  if (store.get('firstRun') === undefined) {
-    // Set 'firstRun' to false since we're running the app for the first time
-    store.set('firstRun', false)
-    return true
-  }
-  return false
-}
-
-const showSplashScreen = () => {
-  let splashWindow: BrowserWindow | null = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-    },
-  })
-
-  splashWindow.on('closed', () => (splashWindow = null))
-}
-
 const pathSchema = z.string().endsWith('ffmpeg')
 
 export const checkSetup = async (app: Electron.App) => {
@@ -189,6 +231,13 @@ export const checkSetup = async (app: Electron.App) => {
     }
     // await initFFmpegInstallation(mainWindow)
     // The window needs some time to start up
+
+    // Check if chrome extension is installed
+    if (isExtensionInstalled(CHROME_EXTENSION_ID)) {
+      mainWindow.webContents.send(IPC.WINDOWS.SETUP.EXTENSION_STATUS, [INSTALL_STATUS.ALREADY_INSTALLED])
+    } else {
+      mainWindow.webContents.send(IPC.WINDOWS.SETUP.EXTENSION_STATUS, [INSTALL_STATUS.UNINSTALLED])
+    }
   })
 
   mainWindow.webContents.on('ipc-message', async (event, channel, args) => {
@@ -217,6 +266,12 @@ export const checkSetup = async (app: Electron.App) => {
         mainWindow.webContents.send(IPC.WINDOWS.SETUP.MANIFEST_STATUS, [INSTALL_STATUS.INSTALLED])
       } else {
         mainWindow.webContents.send(IPC.WINDOWS.SETUP.MANIFEST_STATUS, [INSTALL_STATUS.FAILED])
+      }
+    } else if (channel === IPC.WINDOWS.SETUP.VERIFY_EXTENSION) {
+      if (isExtensionInstalled(CHROME_EXTENSION_ID)) {
+        mainWindow.webContents.send(IPC.WINDOWS.SETUP.EXTENSION_STATUS, [INSTALL_STATUS.INSTALLED])
+      } else {
+        mainWindow.webContents.send(IPC.WINDOWS.SETUP.EXTENSION_STATUS, [INSTALL_STATUS.FAILED])
       }
     }
   })

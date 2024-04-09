@@ -1,6 +1,6 @@
 {
   "name": "github_video_compressor",
-  "displayName": "GithubVideoCompressor",
+  "displayName": "Github Video Compressor",
   "version": "0.0.3",
   "description": "Seamlessly compresses video files in the Github UI before uploading",
   "license": "MIT",

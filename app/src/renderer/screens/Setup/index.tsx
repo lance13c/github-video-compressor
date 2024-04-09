@@ -1,5 +1,5 @@
 import { Accordion, AccordionItem, Button, Divider, Input, Link, Snippet } from '@nextui-org/react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FaFile } from 'react-icons/fa'
 import { IoExtensionPuzzleOutline } from 'react-icons/io5'
 import { TbSquareRoundedNumber1, TbSquareRoundedNumber2, TbSquareRoundedNumber3 } from 'react-icons/tb'
@@ -8,7 +8,6 @@ import 'react-toastify/dist/ReactToastify.css'
 
 import { Container } from '~/src/renderer/components'
 import StatusIcon from '~/src/renderer/components/StatusIcon'
-import { useWindowStore } from '~/src/renderer/store'
 import manifestFile from '~/src/resources/public/com.dominic_cicilio.github_video_compressor.json'
 import { INSTALL_STATUS, InstallStatus } from '~/src/shared/constants'
 import { CHROME_EXTENSION_PUBLICATION_URL } from '~/src/shared/utils/constant'
@@ -16,10 +15,8 @@ import { CHROME_EXTENSION_PUBLICATION_URL } from '~/src/shared/utils/constant'
 const { App } = window
 
 export function SetupScreen() {
-  const store = useWindowStore().setup
-  const [setupProgress, setSetupProgress] = useState(0)
-  const [isSetupComplete, setIsSetupComplete] = useState(false)
   const [ffmpegInstallStatus, setFfmpegInstallStatus] = useState<InstallStatus>(INSTALL_STATUS.NONE)
+  const [extensionInstallStatus, setExtensionInstallStatus] = useState<InstallStatus>(INSTALL_STATUS.NONE)
   const [ffmpegPath, setFFmpegPath] = useState('')
   const [isVerifyingFFmpegPath, setIsVerifyingFFmpegPath] = useState(false)
   const [manifestInstallStatus, setManifestInstallStatus] = useState<InstallStatus>(INSTALL_STATUS.NONE)
@@ -55,10 +52,17 @@ export function SetupScreen() {
       setManifestInstallStatus(status)
     })
 
+    // Init extension status
+    const removeExtensionChannel = App.onExtensionInstallStatus((_, [status, message = '']) => {
+      console.log('status', status)
+      setExtensionInstallStatus(status)
+    })
+
     return () => {
       removeChannel()
       removePathChannel()
       removeManifestChannel()
+      removeExtensionChannel()
     }
   }, [])
 
@@ -73,13 +77,19 @@ export function SetupScreen() {
     App.setFfmpegPath(ffmpegPath)
   }, [ffmpegPath])
 
-  // const checkManifestFile = () => {
+  const verifyChromeExtensionIsInstalled = useCallback(() => {
+    App.verifyChromeExtensionIsInstalled()
+  }, [])
 
-  // }
-
-  const autoDetectFFmpegPath = () => {
-    // trigger which ffmpeg in terminal and return the path
-  }
+  const everythingIsInstalled = useMemo(
+    () =>
+      (ffmpegInstallStatus === INSTALL_STATUS.INSTALLED || ffmpegInstallStatus === INSTALL_STATUS.ALREADY_INSTALLED) &&
+      (extensionInstallStatus === INSTALL_STATUS.INSTALLED ||
+        extensionInstallStatus === INSTALL_STATUS.ALREADY_INSTALLED) &&
+      (manifestInstallStatus === INSTALL_STATUS.INSTALLED ||
+        manifestInstallStatus === INSTALL_STATUS.ALREADY_INSTALLED),
+    [ffmpegInstallStatus, extensionInstallStatus, manifestInstallStatus],
+  )
 
   return (
     <Container>
@@ -221,7 +231,7 @@ export function SetupScreen() {
 
               <div className="pl-2 relative flex items-center gap-2">
                 <p className="font-medium text-sm">Install Chrome Extension</p>
-                {/* <InstallStatusIcon status={ffmpegInstallStatus} /> */}
+                <StatusIcon status={extensionInstallStatus} />
               </div>
             </div>
           }>
@@ -237,11 +247,28 @@ export function SetupScreen() {
               <Link color="primary" href={CHROME_EXTENSION_PUBLICATION_URL} size="sm" isExternal showAnchorIcon>
                 Install Chrome Extension
               </Link>
+              <Button
+                onClick={verifyChromeExtensionIsInstalled}
+                size="sm"
+                color="primary"
+                variant="solid"
+                className="max-w-[200px]">
+                Verify
+              </Button>
               <IoExtensionPuzzleOutline className="b-0 text-primary-300/20" size={70} />
             </div>
           </div>
         </AccordionItem>
       </Accordion>
+      {everythingIsInstalled && (
+        <div className="text-gray-800 text-sm flex flex-col gap-2 max-w-[60%]">
+          <p>Congrats everything is installed 🎉</p>
+          <p>
+            Now you can close the app and everything should work. The application will only run when the chrome
+            extension needs it.
+          </p>
+        </div>
+      )}
     </Container>
   )
 }

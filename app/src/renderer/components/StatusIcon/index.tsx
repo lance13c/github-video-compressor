@@ -1,4 +1,4 @@
-import { FaCheckCircle, FaDotCircle, FaExclamationCircle, FaSpinner } from 'react-icons/fa'
+import { FaCheckCircle, FaExclamationCircle, FaSpinner } from 'react-icons/fa'
 import { INSTALL_STATUS, InstallStatus } from '~/src/shared/constants'
 
 interface Props {
@@ -15,7 +15,7 @@ const StatusIcon: React.FC<Props> = ({ status }) => {
     case INSTALL_STATUS.FAILED:
       return <FaExclamationCircle className="text-red-500" />
     case INSTALL_STATUS.UNINSTALLED:
-      return <FaDotCircle className="text-gray-300" />
+      return <FaCheckCircle className="text-gray-300" />
     default:
       return null
   }
