@@ -46,7 +46,6 @@ export class GithubUploader {
     repository_id,
     content_type,
     file,
-    imageUploadCompleteCallback,
   }: {
     imageName: string;
     imageSize: number;
@@ -54,8 +53,7 @@ export class GithubUploader {
     repository_id: string;
     content_type: string;
     file: File;
-    imageUploadCompleteCallback?: (response: Response) => void;
-  }): Promise<ImageStartResponse> {
+  }): Promise<[Promise<ImageStartResponse>, Promise<Response>]> {
     const formData = new FormData();
     formData.append('name', imageName);
     formData.append('size', `${imageSize}`);
@@ -75,17 +73,14 @@ export class GithubUploader {
 
     // Do this asynchronously
     const imageUploadResponse = this.uploadImageToS3(file, prepareResponse);
-    imageUploadResponse.then(res => {
-      imageUploadCompleteCallback?.(res);
-    });
 
     const putAssetFormData = new FormData();
     putAssetFormData.append('authenticity_token', prepareResponse.asset_upload_authenticity_token);
 
     // Puts the image info into github assets, gets back the asset url.
-    return await this.request(this.baseUrl + prepareResponse.asset_upload_url, 'PUT', putAssetFormData, {
+    return [this.request(this.baseUrl + prepareResponse.asset_upload_url, 'PUT', putAssetFormData, {
       Accept: 'application/json',
-    });
+    }), imageUploadResponse];
   }
 
   private async uploadImageToS3(file: File, uploadData: PrepareImageResponse): Promise<Response> {

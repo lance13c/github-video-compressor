@@ -159,7 +159,7 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
 
       const uniqueNumber = Date.now() + '-' + Math.round(Math.random() * 1e9)
 
-      const outputFileName = `video-${uniqueNumber}.mp4`
+      const outputFileName = `gvc-${uniqueNumber}.mp4`
       const outputPath = path.join(uploadsDir, outputFileName)
 
       sendDebugMessage('debug', `outputPath: ${outputPath}`)
