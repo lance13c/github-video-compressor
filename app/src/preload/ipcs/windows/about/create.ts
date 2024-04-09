@@ -1,6 +1,5 @@
 import { ipcRenderer } from 'electron'
-
-import { IPC } from 'constants'
+import { IPC } from '~/src/shared/constants'
 
 export function createAboutWindow() {
   const channel = IPC.WINDOWS.ABOUT.CREATE_WINDOW

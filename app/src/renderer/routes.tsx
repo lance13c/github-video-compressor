@@ -1,17 +1,16 @@
-import { Router, Route } from 'electron-router-dom'
+import { Route, Router } from 'electron-router-dom'
 
-import { MainScreen, AboutScreen, AnotherScreen } from 'renderer/screens'
+import { MainScreen, SetupScreen } from '~/src/renderer/screens'
 
 export function AppRoutes() {
   return (
     <Router
       main={
         <>
-          <Route path="/" element={<MainScreen />} />
-          <Route path="/anotherScreen" element={<AnotherScreen />} />
+          <Route path="/" element={<SetupScreen />} />
+          <Route path="/main" element={<MainScreen />} />
         </>
       }
-      about={<Route path="/" element={<AboutScreen />} />}
     />
   )
 }

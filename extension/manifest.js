@@ -10,7 +10,7 @@ const manifest = {
   version: packageJson.version,
   description: packageJson.description,
   author: 'dominic cicilio',
-  permissions: ['cookies', 'nativeMessaging', 'storage'],
+  permissions: ['nativeMessaging', 'storage'],
   content_security_policy: {
     extension_pages: "script-src 'self'; object-src 'self'",
   },

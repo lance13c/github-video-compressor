@@ -1,9 +1,8 @@
 import { generateKeyPairSync, randomBytes } from 'crypto'
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
-import { sendDebugMessage } from 'main/dev_websockets'
 
-export const generateSecretKey = (length: number = 64): string => {
+const generateSecretKey = (length: number = 64): string => {
   return randomBytes(length).toString('hex')
 }
 
@@ -56,7 +55,6 @@ export const validateTokenMiddleware = (req: Request, res: Response, next: NextF
 
     next() // Proceed to the next middleware/function
   } catch (error) {
-    // @ts-expect-error -- valid message
     sendDebugMessage('debug', `Error validating token: ${error?.message}`)
     return res.status(400).json('')
   }

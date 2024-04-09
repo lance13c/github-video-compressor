@@ -1,14 +1,4 @@
 {
   "name": "github_video_compressor",
-  "private": true,
-  "workspaces": {
-    "packages": [
-      "app",
-      "extension",
-      "shared"
-    ],
-    "nohoist": [
-      "**electron**"
-    ]
-  }
+  "private": true
 }

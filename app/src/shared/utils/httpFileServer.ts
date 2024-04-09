@@ -1,17 +1,18 @@
 import bodyParser from 'body-parser'
 import cors from 'cors'
+import Store from 'electron-store'
 import express, { Express, NextFunction, Request, Response } from 'express'
 import ffmpeg from 'fluent-ffmpeg'
 import fs from 'fs'
 import https from 'https'
-import { sendDebugMessage } from 'main/dev_websockets'
 import multer from 'multer'
 import path from 'path'
-import { generateHostKey, validateTokenMiddleware } from 'shared/utils/crypto.util'
-import { mimeTypeToExtension } from 'shared/utils/file.util'
 import { fileURLToPath } from 'url'
+import { sendDebugMessage } from '~/src/main/dev_websockets'
+import { generateHostKey, validateTokenMiddleware } from '~/src/shared/utils/crypto.util'
+import { mimeTypeToExtension } from '~/src/shared/utils/file.util'
 
-ffmpeg.setFfmpegPath('/opt/homebrew/bin/ffmpeg')
+const store = new Store()
 
 const isDevelopment = process.argv.includes('--development')
 sendDebugMessage('debug', `isDevelopment: ${isDevelopment}`)
@@ -28,6 +29,10 @@ declare global {
   }
 }
 
+// const setFfmpegPath = (path: string) => {
+//   ffmpeg.setFfmpegPath(path)
+// }
+
 async function deleteFilesInDirectory(dirPath: string): Promise<void> {
   try {
     const files = await fs.promises.readdir(dirPath)
@@ -37,8 +42,7 @@ async function deleteFilesInDirectory(dirPath: string): Promise<void> {
     })
     await Promise.all(unlinkPromises)
     sendDebugMessage('debug', `All files in ${dirPath} have been deleted.`)
-  } catch (error) {
-    // @ts-expect-error -- error message is valid
+  } catch (error: any) {
     sendDebugMessage('error', `Error deleting files in directory ${dirPath}: ${error?.message}`)
     throw error // Rethrow the error if you want to handle it further up the call stack
   }
@@ -50,8 +54,7 @@ const wipeDirectoryMiddleware = (dirPath: string) => {
     try {
       await deleteFilesInDirectory(dirPath)
       next()
-    } catch (error) {
-      // @ts-expect-error -- error message is valid
+    } catch (error: any) {
       sendDebugMessage('debug', `Error wiping directory ${dirPath}: ${error?.message}`)
       res.status(500).json({ message: 'Error processing request' })
     }
@@ -59,6 +62,14 @@ const wipeDirectoryMiddleware = (dirPath: string) => {
 }
 
 export const startHttpFileServer = (electronApp: Electron.App, port: number = 7779) => {
+  const ffmpegFilePath = store.get('ffmpegPath') as string | undefined
+  if (!ffmpegFilePath) {
+    sendDebugMessage('error', 'No FFmpeg path found in store')
+    throw new Error('No FFmpeg path found in store')
+  }
+
+  ffmpeg.setFfmpegPath(ffmpegFilePath)
+
   const tempPath = electronApp.getPath('temp')
   // @ts-expect-error - import.meta.url is correct
   const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -118,8 +129,7 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
       sendDebugMessage('debug - path', req.file.path)
       sendDebugMessage('debug - upload input path', fs.readdirSync(uploadsDir).join(', '))
 
-      // @ts-expect-error -- test token
-      sendDebugMessage('debug - token', req?.token)
+      // sendDebugMessage('debug - token', req?.token)
       sendDebugMessage('debug - file', req.file)
       // fs.move(req.file.path, path.join(__dirname, 'uploads', req.file.originalname), { overwrite: true })
       //   .then(() => res.status(200).json({ message: 'File uploaded successfully.' }))
@@ -149,7 +159,7 @@ export const startHttpFileServer = (electronApp: Electron.App, port: number = 77
 
       const uniqueNumber = Date.now() + '-' + Math.round(Math.random() * 1e9)
 
-      const outputFileName = `video-${uniqueNumber}.mp4`
+      const outputFileName = `gvc-${uniqueNumber}.mp4`
       const outputPath = path.join(uploadsDir, outputFileName)
 
       sendDebugMessage('debug', `outputPath: ${outputPath}`)

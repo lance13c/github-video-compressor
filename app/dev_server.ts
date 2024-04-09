@@ -45,9 +45,9 @@ wss.on('connection', ws => {
 
 const runBuild = async () => {
   // Kill existing build process if it's running
-  if (buildProcess && !buildProcess.killed) {
-    buildProcess.kill()
-  }
+  // if (buildProcess && !buildProcess.killed) {
+  //   buildProcess.kill()
+  // }
 
   // Start a new build process
   try {

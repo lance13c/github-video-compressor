@@ -1,15 +1,19 @@
-import ReactDom from 'react-dom/client'
 import React from 'react'
+import ReactDom from 'react-dom/client'
 
-import { WindowStoreProvider } from './store'
 import { AppRoutes } from './routes'
+import { WindowStoreProvider } from './store'
 
-import 'resources/styles/globals.sass'
+import { NextUIProvider } from '@nextui-org/react'
+
+import '~/src/resources/styles/globals.sass'
 
 ReactDom.createRoot(document.querySelector('app') as HTMLElement).render(
   <React.StrictMode>
     <WindowStoreProvider>
-      <AppRoutes />
+      <NextUIProvider>
+        <AppRoutes />
+      </NextUIProvider>
     </WindowStoreProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 )

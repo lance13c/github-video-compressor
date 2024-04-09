@@ -19,23 +19,26 @@ module.exports = {
     output: `dist/v${version}`,
   },
 
+  forceCodeSigning: true,
+
   mac: {
-    icon: `${resources}/build/icons/icon.icos`,
+    icon: `${resources}/build/icons/icon.icns`,
     category: 'public.app-category.utilities',
   },
 
   dmg: {
     icon: false,
+    sign: true,
   },
 
-  linux: {
-    category: 'Utilities',
-    synopsis: description,
-    target: ['AppImage', 'deb', 'pacman', 'freebsd', 'rpm'],
-  },
+  // linux: {
+  //   category: 'Utilities',
+  //   synopsis: description,
+  //   target: ['AppImage', 'deb', 'pacman', 'freebsd', 'rpm'],
+  // },
 
-  win: {
-    icon: `${resources}/build/icons/icon.ico`,
-    target: ['nsis', 'portable', 'zip'],
-  },
+  // win: {
+  //   icon: `${resources}/build/icons/icon.ico`,
+  //   target: ['nsis', 'portable', 'zip'],
+  // },
 }

@@ -1,9 +1,13 @@
-import { useContext, createContext, useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 
 export interface WindowStore {
   about: {
     isOpen: boolean
     setAboutWindowState: (value: boolean) => void
+  }
+  setup: {
+    isFfmpegInstalled: boolean
+    setFfmpegInstalledState: (value: boolean) => void
   }
 }
 
@@ -13,17 +17,14 @@ export function useWindowStore() {
   return useContext(WindowStoreContext)
 }
 
-export function WindowStoreProvider({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export function WindowStoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState({
     about: { isOpen: false, setAboutWindowState },
+    setup: { isFfmpegInstalled: false, setFfmpegInstalledState },
   })
 
   function setAboutWindowState(value: boolean) {
-    setState((state) => ({
+    setState(state => ({
       ...state,
       about: {
         ...state.about,
@@ -32,9 +33,15 @@ export function WindowStoreProvider({
     }))
   }
 
-  return (
-    <WindowStoreContext.Provider value={state}>
-      {children}
-    </WindowStoreContext.Provider>
-  )
+  function setFfmpegInstalledState(value: boolean) {
+    setState(state => ({
+      ...state,
+      setup: {
+        ...state.setup,
+        isFfmpegInstalled: value,
+      },
+    }))
+  }
+
+  return <WindowStoreContext.Provider value={state}>{children}</WindowStoreContext.Provider>
 }

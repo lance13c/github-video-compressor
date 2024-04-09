@@ -138,21 +138,21 @@ const uploadFileToGithub = async (textAreaElement: HTMLTextAreaElement, fileBlob
 
   if (fileBlob) {
     const file = new File([fileBlob], fileName, { type: fileBlob.type })
-    console.debug('Uploading file:', fileName)
 
     const repoId = getRepositoryId()
     const csrfToken = getAuthenticityToken()
     const uniqueId = Math.floor(Math.random() * 1000000000)
 
-    const imageResponse = await uploader.startImageUpload({
-      imageName: `v-${uniqueId}-${file.name}`,
+    const [imageResponsePromise, imageUploadPromise] = await uploader.startImageUpload({
+      imageName: `gvc-${uniqueId}-${file.name}`,
       imageSize: file.size,
       authenticity_token: csrfToken,
       content_type: file.type,
       repository_id: repoId,
       file,
-      imageUploadCompleteCallback: () => {},
     })
+
+    const imageResponse = await imageResponsePromise
 
     if (!imageResponse) {
       throw new Error('Invalid image response')
@@ -164,6 +164,8 @@ const uploadFileToGithub = async (textAreaElement: HTMLTextAreaElement, fileBlob
       )
       throw new Error('Textarea element not found')
     }
+
+    await imageUploadPromise
 
     insertMarkdownLink(
       textAreaElement,
@@ -195,6 +197,7 @@ const processFileUpload = async (file: File, textAreaElement: HTMLTextAreaElemen
         `Compressing [${file.name}]`,
         `Uploading [${compressedFile.name}]`,
       )
+      console.log("Change 'Compressing' to 'Uploading'")
 
       return await uploadFileToGithub(textAreaElement, compressedFile, compressedFile.name)
     } catch (err) {

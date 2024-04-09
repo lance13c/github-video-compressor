@@ -1,21 +1,20 @@
 import { BrowserWindow } from 'electron'
+import { displayName } from 'package.json'
 import { join } from 'path'
-
-import { ENVIRONMENT } from 'constants'
-import { createWindow } from 'main/factories'
-import { displayName } from '~/package.json'
+import { createWindow } from '~/src/main/factories'
+import { ENVIRONMENT } from '~/src/shared/constants'
 
 export async function MainWindow() {
   const window = createWindow({
     id: 'main',
     title: displayName,
-    width: 700,
-    height: 473,
+    width: 900,
+    height: 573,
     show: false,
     center: true,
     movable: true,
     resizable: false,
-    alwaysOnTop: true,
+    alwaysOnTop: false,
     autoHideMenuBar: true,
 
     webPreferences: {
@@ -31,9 +30,7 @@ export async function MainWindow() {
     window.show()
   })
 
-  window.on('close', () =>
-    BrowserWindow.getAllWindows().forEach((window) => window.destroy())
-  )
+  window.on('close', () => BrowserWindow.getAllWindows().forEach(window => window.destroy()))
 
   return window
 }
