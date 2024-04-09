@@ -22,7 +22,7 @@ module.exports = {
   forceCodeSigning: true,
 
   mac: {
-    icon: `${resources}/build/icons/icon.icos`,
+    icon: `${resources}/build/icons/icon.icns`,
     category: 'public.app-category.utilities',
   },
 

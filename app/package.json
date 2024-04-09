@@ -2,7 +2,7 @@
   "displayName": "Github Video Compressor",
   "name": "github_video_compressor_app",
   "description": "A seamless local video compressing solution when upload videos to Github",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": "./node_modules/.dev/main/index.js",
   "resources": "src/resources",
   "author": {

@@ -20,16 +20,21 @@ const IPC_FFMPEG_STATUS = IPC.WINDOWS.SETUP.FFMPEG_INSTALL_STATUS
 const IPC_FFMPEG_PATH = IPC.WINDOWS.SETUP.FFMPEG_PATH
 
 function isExtensionInstalled(extensionId: string): boolean {
-  const profileDirs = getProfileDirectories()
+  try {
+    const profileDirs = getProfileDirectories()
 
-  for (const profileDir of profileDirs) {
-    const extensionPath = getExtensionPath(extensionId, profileDir)
-    if (fs.existsSync(extensionPath)) {
-      return true
+    for (const profileDir of profileDirs) {
+      const extensionPath = getExtensionPath(extensionId, profileDir)
+      if (fs.existsSync(extensionPath)) {
+        return true
+      }
     }
-  }
 
-  return false
+    return false
+  } catch (e) {
+    sendDebugMessage('error', `Error checking extension installation: ${e}`)
+    return false
+  }
 }
 
 function getProfileDirectories(): string[] {
@@ -46,7 +51,7 @@ function getProfileDirectories(): string[] {
       break
     case 'darwin':
       homeDir = process.env.HOME!
-      chromeUserDataDir = path.join(homeDir, 'Library', 'Application Support', 'Google', 'Chrome')
+      chromeUserDataDir = path.join(homeDir, 'Library', `Application\ Support`, 'Google', 'Chrome')
       profileDirs.push(path.join(chromeUserDataDir, 'Default'))
       break
     case 'linux':
@@ -162,17 +167,22 @@ const getChromeExtensionManifestPath = (app: Electron.App, platform: NodeJS.Plat
 
 function checkChromeExtensionManifest(app: Electron.App) {
   const platform = os.platform()
-  const manifestPath = getChromeExtensionManifestPath(app, platform)
+  try {
+    const manifestPath = getChromeExtensionManifestPath(app, platform)
 
-  // Check if manifestPath is defined for the current platform
-  if (!manifestPath) {
-    sendDebugMessage('error', `Platform ${platform} is not supported for Chrome extension manifest setup.`)
+    // Check if manifestPath is defined for the current platform
+    if (!manifestPath) {
+      sendDebugMessage('error', `Platform ${platform} is not supported for Chrome extension manifest setup.`)
 
-    throw new Error(`Platform ${platform} is not supported for Chrome extension manifest setup.`)
+      throw new Error(`Platform ${platform} is not supported for Chrome extension manifest setup.`)
+    }
+    const manifestFile = path.join(manifestPath, `${APP_NAME}.json`)
+
+    return !!fs.existsSync(manifestFile)
+  } catch (e) {
+    sendDebugMessage('error', `Error checking Chrome extension manifest: ${e}`)
+    return false
   }
-  const manifestFile = path.join(manifestPath, `${APP_NAME}.json`)
-
-  return !!fs.existsSync(manifestFile)
 }
 
 const createManifestFile = (app: Electron.App) => {
