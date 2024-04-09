@@ -19,8 +19,6 @@ const rollupFluentPluginFix = alias({
   entries: [{ find: './lib-cov/fluent-ffmpeg', replacement: './lib/fluent-ffmpeg' }],
 })
 
-console.log('tsconfigPaths:', tsconfigPaths)
-
 export default defineConfig({
   main: {
     define: {

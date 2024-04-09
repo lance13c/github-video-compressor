@@ -4,8 +4,6 @@ import winston from 'winston'
 import WebSocket from 'ws'
 
 const logDirectory = `${app.getPath('appData')}/${name}/logs` // Specify the logs directory within the user data directory
-console.log('logDirectory', logDirectory)
-
 const logger = winston.createLogger({
   level: 'debug',
   format: winston.format.simple(),
@@ -41,7 +39,6 @@ export function sendDebugMessage(type: string, data: string | Record<string, any
     message: typeof data === 'object' ? JSON.stringify(data) : JSON.stringify({ message: data }),
   })
 
-  console.log('hit sendDebugMessage')
   if (!debugWebSocket) return
 
   const message = {

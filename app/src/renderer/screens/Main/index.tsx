@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button, Container, Heading } from '~/src/renderer/components'
@@ -10,16 +9,6 @@ const { App } = window
 export function MainScreen() {
   const navigate = useNavigate()
   const store = useWindowStore().about
-
-  useEffect(() => {
-    App.sayHelloFromBridge()
-
-    // App.whenAboutWindowClose(({ message }) => {
-    //   console.log(message)
-
-    //   store.setAboutWindowState(false)
-    // })
-  }, [])
 
   function openAboutWindow() {
     // App.createAboutWindow()

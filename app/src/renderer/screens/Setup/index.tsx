@@ -23,15 +23,12 @@ export function SetupScreen() {
 
   useEffect(() => {
     const removeChannel = App.onFfmpegInstallStatus((_, [status, message = '']) => {
-      console.log('status', status)
-      console.log('message', message)
       if (status === INSTALL_STATUS.INSTALLED) {
         toast('FFmpeg is successfully linked')
       } else if (status === INSTALL_STATUS.FAILED || status === INSTALL_STATUS.UNINSTALLED) {
         toast(`Invalid ffmpeg path. Please try again. ${message}`, { type: 'error' })
       }
 
-      console.log('status', status)
       setIsVerifyingFFmpegPath(false)
       setFfmpegInstallStatus(status)
     })
@@ -54,7 +51,6 @@ export function SetupScreen() {
 
     // Init extension status
     const removeExtensionChannel = App.onExtensionInstallStatus((_, [status, message = '']) => {
-      console.log('status', status)
       setExtensionInstallStatus(status)
     })
 
@@ -72,7 +68,6 @@ export function SetupScreen() {
   }
 
   const verifyAndSetFFmpegPath = useCallback(() => {
-    console.log('verifyAndSetFFmpegPath')
     setIsVerifyingFFmpegPath(true)
     App.setFfmpegPath(ffmpegPath)
   }, [ffmpegPath])

@@ -55,7 +55,7 @@ function getProfileDirectories(): string[] {
       profileDirs.push(path.join(chromeUserDataDir, 'Default'))
       break
     default:
-      console.warn('Unsupported platform:', process.platform)
+      sendDebugMessage('error', `Unsupported platform: ${process.platform}`)
       return profileDirs
   }
 
@@ -207,7 +207,6 @@ const createManifestFile = (app: Electron.App) => {
 const pathSchema = z.string().endsWith('ffmpeg')
 
 export const checkSetup = async (app: Electron.App) => {
-  console.log('hit checkSetup')
   const mainWindow = await makeAppSetup(MainWindow)
   mainWindow.webContents.on('did-finish-load', async () => {
     await checkLS(mainWindow)
@@ -241,7 +240,6 @@ export const checkSetup = async (app: Electron.App) => {
   })
 
   mainWindow.webContents.on('ipc-message', async (event, channel, args) => {
-    console.log('hit ipc-message')
     if (channel === IPC.WINDOWS.SETUP.FFMPEG_PATH) {
       const parsedPath = pathSchema.safeParse(args)
       if (!parsedPath.success) {
