@@ -66,7 +66,7 @@ makeAppWithSingleInstanceLock(async () => {
           app.quit()
         })
       }
-    }, 4000)
+    }, 3000)
 
     process.on('exit', () => {
       sendDebugMessage('info', 'Shutting down Electron app')
