@@ -83,7 +83,7 @@ function getExtensionPath(extensionId: string, profileDir: string): string {
       return path.join(extensionDir, versionDirs[0])
     }
   } catch (e) {
-    sendDebugMessage('error', `Error getting extension path: ${e}`)
+    sendDebugMessage('info', `Error getting extension path: ${e}`)
   }
 
   return ''
@@ -219,8 +219,6 @@ const pathSchema = z.string().endsWith('ffmpeg')
 export const checkSetup = async (app: Electron.App) => {
   const mainWindow = await makeAppSetup(MainWindow)
   mainWindow.webContents.on('did-finish-load', async () => {
-    await checkLS(mainWindow)
-
     // Path Init
     const path = store.get('ffmpegPath')
     const parsedPath = pathSchema.safeParse(path)

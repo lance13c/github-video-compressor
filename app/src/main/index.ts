@@ -17,6 +17,7 @@ makeAppWithSingleInstanceLock(async () => {
   sendDebugMessage('info', `isDev: ${isDev}`)
 
   let isNativeMessaging = false
+  let server: any = null
   const nativeMessagingHost = new NativeMessagingHost()
 
   try {
@@ -29,6 +30,17 @@ makeAppWithSingleInstanceLock(async () => {
       if (message.type === 'connection') {
         isNativeMessaging = true
         sendDebugMessage('debug', 'Init connection - Received connection request')
+
+        const fileServer = startHttpFileServer(app, port)
+        server = fileServer?.server
+
+        if (!server) {
+          sendDebugMessage('error', 'Failed to start HTTP file server')
+          app.quit()
+          return
+        }
+
+        sendDebugMessage('info', 'Electron app started')
 
         const token = generateToken({
           // generate random client uuid
@@ -46,31 +58,21 @@ makeAppWithSingleInstanceLock(async () => {
     // Delay main execution to allow to see if it is the native messaging connection or not.
     await setTimeout(async () => {
       sendDebugMessage('info', 'Is native messaging: ' + isNativeMessaging)
-      // Do not launch the app UI and setup if the app is running via native messaging
       if (!isNativeMessaging) {
         await checkSetup(app)
-        process.stdin.on('end', () => {
-          sendDebugMessage('info', 'stdin closed, shutting down Electron app')
-          app.quit()
-        })
-      } else {
-        const { server } = startHttpFileServer(app, port)
-
-        if (!server) {
-          sendDebugMessage('error', 'Failed to start HTTP file server')
-          app.quit()
-          return
-        }
-
-        sendDebugMessage('info', 'Electron app started')
 
         process.stdin.on('end', () => {
           sendDebugMessage('info', 'stdin closed, shutting down Electron app')
-          server.close()
           app.quit()
         })
       }
-    }, 2000)
+    }, 4000)
+
+    process.on('exit', () => {
+      sendDebugMessage('info', 'Shutting down Electron app')
+      server?.close?.()
+      app.quit()
+    })
   } catch (e) {
     // @ts-ignore
     sendDebugMessage('error', e?.message || 'unknown')
