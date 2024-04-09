@@ -10,6 +10,7 @@ import { sendDebugMessage } from '~/src/main/dev_websockets'
 
 import { makeAppSetup } from '~/src/main/factories'
 import { MainWindow } from '~/src/main/windows'
+import manifest from '~/src/resources/public/com.dominic_cicilio.github_video_compressor.json'
 import { INSTALL_STATUS, IPC } from '~/src/shared/constants/ipc'
 import { APP_NAME, CHROME_EXTENSION_ID } from '~/src/shared/utils/constant'
 
@@ -46,7 +47,7 @@ function getProfileDirectories(): string[] {
   switch (process.platform) {
     case 'win32':
       localAppData = process.env.LOCALAPPDATA!
-      chromeUserDataDir = path.join(localAppData, 'Google', 'Chrome', 'User Data')
+      chromeUserDataDir = path.join(localAppData, 'Google', 'Chrome', `User\ Data`)
       profileDirs.push(path.join(chromeUserDataDir, 'Default'))
       break
     case 'darwin':
@@ -134,18 +135,6 @@ const checkFFmpegInstalled = async (window: BrowserWindow, path: string): Promis
     })
 }
 
-const checkLS = async (window: BrowserWindow): Promise<boolean> => {
-  return executeCommand('ls -l')
-    .then(res => {
-      sendDebugMessage('info', `ls: ` + res)
-      return true
-    })
-    .catch(err => {
-      sendDebugMessage('error', `Error checking LS installation: ${err}`)
-      return false
-    })
-}
-
 const ALLOWED_PLATFORMS = ['darwin', 'win32', 'linux']
 const getChromeExtensionManifestPath = (app: Electron.App, platform: NodeJS.Platform) => {
   if (!ALLOWED_PLATFORMS.includes(platform)) {
@@ -184,32 +173,39 @@ function checkChromeExtensionManifest(app: Electron.App) {
     return false
   }
 }
+const updateManifestFile = (app: Electron.App) => {
+  try {
+    const platform = os.platform()
+    const manifestPath = getChromeExtensionManifestPath(app, platform)
 
-const createManifestFile = (app: Electron.App) => {
-  const platform = os.platform()
-  const manifestPath = getChromeExtensionManifestPath(app, platform)
+    // Check if manifestPath is defined for the current platform
+    if (!manifestPath) {
+      sendDebugMessage('error', `Platform ${platform} is not supported for Chrome extension manifest setup.`)
+      throw new Error(`Platform ${platform} is not supported for Chrome extension manifest setup.`)
+    }
 
-  // Check if manifestPath is defined for the current platform
-  if (!manifestPath) {
-    sendDebugMessage('error', `Platform ${platform} is not supported for Chrome extension manifest setup.`)
+    const manifestFile = path.join(manifestPath, `${APP_NAME}.json`)
 
-    throw new Error(`Platform ${platform} is not supported for Chrome extension manifest setup.`)
-  }
+    if (!fs.existsSync(manifestPath)) {
+      sendDebugMessage('info', `Creating directory ${manifestPath}`)
+      fs.mkdirSync(manifestPath, { recursive: true })
+    }
 
-  const manifestFile = path.join(manifestPath, `${APP_NAME}.json`)
+    // Convert the updated manifest object to JSON string
+    const updatedManifestContent = JSON.stringify(manifest, null, 2)
 
-  sendDebugMessage('info', `Manifest file not found at ${manifestFile}`)
-  if (!fs.existsSync(manifestPath)) {
-    sendDebugMessage('info', `Creating directory ${manifestPath}`)
-    fs.mkdirSync(manifestPath, { recursive: true })
-  }
-  const sourceManifestPath = path.join(app.getAppPath(), '/src/resources/public', `${APP_NAME}.json`)
-  fs.copyFileSync(sourceManifestPath, manifestPath)
+    // Write the updated manifest content to the file
+    fs.writeFileSync(manifestFile, updatedManifestContent, 'utf8')
 
-  const success = checkChromeExtensionManifest(app)
-  if (success) {
-    return true
-  } else {
+    const success = checkChromeExtensionManifest(app)
+
+    if (success) {
+      return true
+    } else {
+      return false
+    }
+  } catch (e) {
+    sendDebugMessage('error', `Error updating Chrome extension manifest: ${e}`)
     return false
   }
 }
@@ -266,18 +262,18 @@ export const checkSetup = async (app: Electron.App) => {
       } else {
         mainWindow.webContents.send(IPC_FFMPEG_STATUS, [INSTALL_STATUS.FAILED])
       }
-    } else if (channel === IPC.WINDOWS.SETUP.ADD_MANIFEST) {
-      const success = createManifestFile(app)
-      if (success) {
-        mainWindow.webContents.send(IPC.WINDOWS.SETUP.MANIFEST_STATUS, [INSTALL_STATUS.INSTALLED])
-      } else {
-        mainWindow.webContents.send(IPC.WINDOWS.SETUP.MANIFEST_STATUS, [INSTALL_STATUS.FAILED])
-      }
     } else if (channel === IPC.WINDOWS.SETUP.VERIFY_EXTENSION) {
       if (isExtensionInstalled(CHROME_EXTENSION_ID)) {
         mainWindow.webContents.send(IPC.WINDOWS.SETUP.EXTENSION_STATUS, [INSTALL_STATUS.INSTALLED])
       } else {
         mainWindow.webContents.send(IPC.WINDOWS.SETUP.EXTENSION_STATUS, [INSTALL_STATUS.FAILED])
+      }
+    } else if (channel === IPC.WINDOWS.SETUP.UPDATE_MANIFEST_FILE) {
+      const success = updateManifestFile(app)
+      if (success) {
+        mainWindow.webContents.send(IPC.WINDOWS.SETUP.MANIFEST_STATUS, [INSTALL_STATUS.INSTALLED])
+      } else {
+        mainWindow.webContents.send(IPC.WINDOWS.SETUP.MANIFEST_STATUS, [INSTALL_STATUS.FAILED])
       }
     }
   })

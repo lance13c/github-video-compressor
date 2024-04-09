@@ -21,6 +21,16 @@ export function SetupScreen() {
   const [isVerifyingFFmpegPath, setIsVerifyingFFmpegPath] = useState(false)
   const [manifestInstallStatus, setManifestInstallStatus] = useState<InstallStatus>(INSTALL_STATUS.NONE)
 
+  const manifestLabel = useMemo(
+    () =>
+      `${
+        manifestInstallStatus === INSTALL_STATUS.INSTALLED || manifestInstallStatus === INSTALL_STATUS.ALREADY_INSTALLED
+          ? 'Update'
+          : 'Add'
+      } Manifest File`,
+    [manifestInstallStatus],
+  )
+
   useEffect(() => {
     const removeChannel = App.onFfmpegInstallStatus((_, [status, message = '']) => {
       if (status === INSTALL_STATUS.INSTALLED) {
@@ -41,7 +51,7 @@ export function SetupScreen() {
     // Init manifest status
     const removeManifestChannel = App.onManifestInstallStatus((_, [status, message = '']) => {
       if (status === INSTALL_STATUS.INSTALLED) {
-        toast('Manifest file is successfully added')
+        toast(`${manifestLabel} successfully`)
       } else if (status === INSTALL_STATUS.FAILED) {
         toast(`Failed to add manifest file. ${message}`, { type: 'error' })
       }
@@ -60,7 +70,7 @@ export function SetupScreen() {
       removeManifestChannel()
       removeExtensionChannel()
     }
-  }, [])
+  }, [manifestLabel])
 
   const handleOnFFmpegPathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const path = e.target.value
@@ -68,12 +78,15 @@ export function SetupScreen() {
   }
 
   const verifyAndSetFFmpegPath = useCallback(() => {
-    setIsVerifyingFFmpegPath(true)
     App.setFfmpegPath(ffmpegPath)
   }, [ffmpegPath])
 
   const verifyChromeExtensionIsInstalled = useCallback(() => {
     App.verifyChromeExtensionIsInstalled()
+  }, [])
+
+  const updateManifestFile = useCallback(() => {
+    App.updateManifestFile()
   }, [])
 
   const everythingIsInstalled = useMemo(
@@ -159,14 +172,14 @@ export function SetupScreen() {
           </div>
         </AccordionItem>
         <AccordionItem
-          key="add-manifest"
-          aria-label="Add manifest file"
+          key="manifest-file"
+          aria-label="manifest file"
           title={
             <div className="flex items-center gap-1">
               <TbSquareRoundedNumber2 />
 
               <div className="pl-2 relative flex items-center gap-2">
-                <p className="font-medium text-sm">Add Manifest File</p>
+                <p className="font-medium text-sm">{manifestLabel}</p>
                 <StatusIcon status={manifestInstallStatus} />
               </div>
             </div>
@@ -175,8 +188,8 @@ export function SetupScreen() {
             <Divider orientation="vertical" className="ml-[7px] h-auto" />
             <div className="relative flex flex-col gap-2 pb-2 text-sm text-gray-600">
               <p className="text-sm text-gray-600">This allows the chrome extension to talk with and boot the app.</p>
-              <Button size="sm" color="primary" variant="solid" className="max-w-[200px]">
-                Add Manifest File
+              <Button onClick={updateManifestFile} size="sm" color="primary" variant="solid" className="max-w-[200px]">
+                {manifestLabel}
               </Button>
               <Accordion
                 style={{
