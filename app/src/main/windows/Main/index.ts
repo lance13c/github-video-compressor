@@ -1,4 +1,4 @@
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, shell } from 'electron'
 import { displayName } from 'package.json'
 import { join } from 'path'
 import { createWindow } from '~/src/main/factories'
@@ -19,6 +19,8 @@ export async function MainWindow() {
 
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      nodeIntegration: true,
+      // contextIsolation: false,
     },
   })
 
@@ -28,6 +30,14 @@ export async function MainWindow() {
     }
 
     window.show()
+  })
+
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http:') || url.startsWith('https:')) {
+      shell.openExternal(url)
+      return { action: 'deny' }
+    }
+    return { action: 'allow' }
   })
 
   window.on('close', () => BrowserWindow.getAllWindows().forEach(window => window.destroy()))
