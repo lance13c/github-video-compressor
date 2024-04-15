@@ -281,11 +281,12 @@ export function SetupScreen() {
         </AccordionItem>
       </Accordion>
       {everythingIsInstalled && (
-        <div className="text-gray-800 text-sm flex flex-col gap-2 max-w-[60%]">
+        <div className="text-gray-800 text-sm flex flex-col gap-2 max-w-[60%] rounded-lg">
           <p>Congrats everything is installed 🎉</p>
+          <p className="font-semibold">You must close the application for the compressing to work.</p>
           <p>
-            Now you can close the app and everything should work. The application will only run when the chrome
-            extension needs it.
+            This will now compress videos 50Mb and greater when attaching them to Github pull requests. The application
+            will only run when the chrome extension needs it.
           </p>
         </div>
       )}
