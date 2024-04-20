@@ -138,6 +138,7 @@ const checkFFmpegInstalled = async (window: BrowserWindow, path: string): Promis
 const ALLOWED_PLATFORMS = ['darwin', 'win32', 'linux']
 const getChromeExtensionManifestPath = (app: Electron.App, platform: NodeJS.Platform) => {
   if (!ALLOWED_PLATFORMS.includes(platform)) {
+    sendDebugMessage('error', `Unsupported platform: ${platform}`)
     throw new Error(`Unsupported platform: ${platform}`)
   }
 
