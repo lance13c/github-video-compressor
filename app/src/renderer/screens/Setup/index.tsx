@@ -1,7 +1,7 @@
-import { Accordion, AccordionItem, Button, Divider, Input, Link, Snippet } from '@nextui-org/react'
+import { Accordion, AccordionItem, Button, Divider, Input, Link, Snippet, Tooltip } from '@nextui-org/react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FaFile } from 'react-icons/fa'
-import { IoExtensionPuzzleOutline } from 'react-icons/io5'
+import { IoExtensionPuzzleOutline, IoInformationCircleOutline } from 'react-icons/io5'
 import { TbSquareRoundedNumber1, TbSquareRoundedNumber2, TbSquareRoundedNumber3 } from 'react-icons/tb'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
@@ -129,22 +129,47 @@ export function SetupScreen() {
               <p className="text-sm text-gray-600">
                 This app uses your installed version of ffmpeg to compress the videos. Please link your ffmpeg below.
               </p>
-              <ol>
-                <li className="flex items-center min-h-8">
-                  <div className="flex items-center gap-2">
-                    <TbSquareRoundedNumber1 size={14} />
-                    Download ffmpeg from
-                  </div>
-                  <div className="flex gap-1">
-                    <Link className="pl-1" href="https://ffmpeg.org/download.html" size="sm" isExternal showAnchorIcon>
-                      Install ffmpeg here
-                    </Link>
+              <ol className="flex flex-col gap-4">
+                <li className="flex items-start min-h-8">
+                  <div className="flex flex-col items-start gap-2">
+                    <div className="flex gap-2">
+                      <TbSquareRoundedNumber1 size={14} />
+                      Download and install ffmpeg.
+                    </div>
+                    <div className="flex flex-col pl-5 text-sm gap-1">
+                      <Snippet color="primary" size="sm">
+                        brew install ffmpeg
+                      </Snippet>
+                      <span>
+                        or
+                        <Link
+                          className="pl-1"
+                          href="https://ffmpeg.org/download.html"
+                          size="sm"
+                          isExternal
+                          showAnchorIcon>
+                          Install ffmpeg here
+                        </Link>
+                      </span>
+                    </div>
                   </div>
                 </li>
                 <li className="flex flex-col gap-2 min-h-8">
                   <div className="flex items-center gap-2">
                     <TbSquareRoundedNumber2 size={14} />
                     Link path to ffmpeg binary
+                  </div>
+                  <div className="flex pl-5 gap-2 items-center">
+                    <Tooltip content="Pro tip" className="text-black">
+                      <div>
+                        <IoInformationCircleOutline size={18} />
+                      </div>
+                    </Tooltip>
+                    Use
+                    <Snippet color="primary" size="sm">
+                      which ffmpeg
+                    </Snippet>{' '}
+                    to grab the path from the terminal.
                   </div>
                   <div className="flex items-end gap-2 pl-5">
                     <Input
@@ -269,11 +294,12 @@ export function SetupScreen() {
         </AccordionItem>
       </Accordion>
       {everythingIsInstalled && (
-        <div className="text-gray-800 text-sm flex flex-col gap-2 max-w-[60%]">
+        <div className="text-gray-800 text-sm flex flex-col gap-2 max-w-[60%] rounded-lg">
           <p>Congrats everything is installed 🎉</p>
+          <p className="font-semibold">You must close the application for the compressing to work.</p>
           <p>
-            Now you can close the app and everything should work. The application will only run when the chrome
-            extension needs it.
+            This will now compress videos 50Mb and greater when attaching them to Github pull requests. The application
+            will only run when the chrome extension needs it.
           </p>
         </div>
       )}
